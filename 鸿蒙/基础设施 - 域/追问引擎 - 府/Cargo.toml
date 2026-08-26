@@ -14,5 +14,5 @@ path = "入口.rs"
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
-renwu_zhixing_fu = { path = "../任务执行-府" }
-moxing_fu = { path = "../模型连接-府" }
+renwu_zhixing_fu = { path = "../任务执行 - 府" }
+moxing_fu = { path = "../模型连接 - 府" }

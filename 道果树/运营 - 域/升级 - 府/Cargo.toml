@@ -15,4 +15,4 @@ path = "入口.rs"
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-jiyi_chengzai_fu = { path = "../../../鸿蒙/基础设施-域/记忆承载-府" }
+jiyi_chengzai_fu = { path = "../../../鸿蒙/基础设施 - 域/记忆承载 - 府" }

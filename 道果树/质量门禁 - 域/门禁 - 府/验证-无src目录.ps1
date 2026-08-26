@@ -17,7 +17,7 @@ if (Test-Path $根Src) {
 
 # 检查所有 crate 内部：只允许 src/lib.rs 或 src/模块名/mod.rs
 $所有入口 = Get-ChildItem -Path . -Recurse -Filter "Cargo.toml" -Force -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -notmatch "道果树\\构建物-域" }
+    Where-Object { $_.FullName -notmatch "道果树\\构建物 - 域" }
 foreach ($cargo in $所有入口) {
     $crate根 = $cargo.DirectoryName
     $src目录 = Join-Path $crate根 "src"

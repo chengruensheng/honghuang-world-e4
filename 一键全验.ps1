@@ -4,7 +4,7 @@
 $ErrorActionPreference = "Continue"
 Set-Location (Split-Path -Parent $PSCommandPath)
 
-$门禁目录 = "道果树/质量门禁-域/门禁-府"
+$门禁目录 = "道果树/质量门禁 - 域/门禁 - 府"
 
 Write-Host "╔══════════════════════════════════════════════╗"
 Write-Host "║  洪荒 · 世界 v3 · 阶段 1 · 一键全验 10 项      ║"

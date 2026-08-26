@@ -23,7 +23,7 @@ if (Test-Path $上下文) {
 
 # 检查散落的 .bak / .tmp
 $bak = Get-ChildItem -Path . -Recurse -Include "*.bak","*.old","*.swp","*.tmp" -Force -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -notmatch "道果树\\构建物-域" }
+    Where-Object { $_.FullName -notmatch "道果树\\构建物 - 域" }
 if ($bak.Count -gt 0) {
     $违规 += "存在 $($bak.Count) 个备份/临时文件"
 }

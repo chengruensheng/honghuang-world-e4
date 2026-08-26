@@ -14,7 +14,7 @@ function 检查 {
 
 # 1. 无 src/ 平铺目录
 $srcDirs = Get-ChildItem -Directory -Recurse -Filter "src" -ErrorAction SilentlyContinue | Where-Object {
-    $_.FullName -notmatch "传\\承\\殿" -and $_.FullName -notmatch "node_modules" -and $_.FullName -notmatch "target" -and $_.FullName -notmatch "构建物-域" -and $_.FullName -notmatch "doc" -and $_.FullName -notmatch "debug" -and $_.FullName -notmatch "incremental"
+    $_.FullName -notmatch "传\\承\\殿" -and $_.FullName -notmatch "node_modules" -and $_.FullName -notmatch "target" -and $_.FullName -notmatch "构建物 - 域" -and $_.FullName -notmatch "doc" -and $_.FullName -notmatch "debug" -and $_.FullName -notmatch "incremental"
 }
 检查 "1. 无 src/ 平铺目录" ($srcDirs.Count -eq 0)
 
@@ -77,7 +77,7 @@ $planCount = (Get-ChildItem -Path "传承殿/10-地基" -Filter "*-阶段*-实�
 检查 "8. 实施方案文档 ≥ 7" ($planCount -ge 7)
 
 # 9. ≥ 5 项门禁脚本
-$门禁Count = (Get-ChildItem -Path "道果树/质量门禁-域/门禁-府" -Filter "验证-*.ps1" -ErrorAction SilentlyContinue | Measure-Object).Count
+$门禁Count = (Get-ChildItem -Path "道果树/质量门禁 - 域/门禁 - 府" -Filter "验证-*.ps1" -ErrorAction SilentlyContinue | Measure-Object).Count
 检查 "9. ≥ 5 项门禁脚本" ($门禁Count -ge 5)
 
 # 10. 一键全验.sh 存在

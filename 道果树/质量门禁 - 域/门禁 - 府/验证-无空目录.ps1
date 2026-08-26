@@ -11,7 +11,7 @@ $空目录 = Get-ChildItem -Path . -Recurse -Directory -Force -ErrorAction Silen
     Where-Object {
         $p = $_.FullName
         # 排除：构建产物、系统目录、版本控制
-        ($p -notmatch "道果树\\构建物-域") -and
+        ($p -notmatch "道果树\\构建物 - 域") -and
         ($p -notmatch "\\\.git") -and
         ($p -notmatch "\\\.codeartsdoer") -and
         ($p -notmatch "\\\.codegraph") -and

@@ -21,7 +21,7 @@ jobs:
       - name: 缓存 cargo
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: "洪蒙 -> 道果树/构建物-域"
+          workspaces: "洪蒙 -> 道果树/构建物 - 域"
 
       - name: 一键全验 10 项
         run: bash 一键全验.sh
