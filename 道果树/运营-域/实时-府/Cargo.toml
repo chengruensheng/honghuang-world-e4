@@ -1,0 +1,16 @@
+[package]
+name = "shishi_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "实时-府 - v4 阶段 17 mock HTTP server（本地替 LLM API）"
+
+[lib]
+name = "shishi_fu"
+path = "入口.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
