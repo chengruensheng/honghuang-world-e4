@@ -1,0 +1,17 @@
+[package]
+name = "jiankong_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "监控-府 - 4 类指标（可用性/性能/正确性/资源）+ 4 级告警（接 07-运营/监控/02-监控.md）"
+
+[lib]
+name = "jiankong_fu"
+path = "入口.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
