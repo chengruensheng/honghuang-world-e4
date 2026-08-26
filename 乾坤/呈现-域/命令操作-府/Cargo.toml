@@ -18,3 +18,6 @@ liushuixian_qudong_fu = { path = "../../../鸿蒙/基础设施-域/流水线驱�
 renwu_zhixing_fu = { path = "../../../鸿蒙/基础设施-域/任务执行-府" }
 # 阶段 7 Day 5-6：CLI 接 LLM 调用器（端到端 mock e2e）
 moxing_fu = { path = "../../../鸿蒙/基础设施-域/模型连接-府" }
+# 阶段 8 Day 5：CLI 接追问+投票（e2e 端到端）
+# crate 名是 zhuiwen_fu (拼音) 不是 zhuwen_fu
+zhuiwen_fu = { path = "../../../鸿蒙/基础设施-域/追问引擎-府" }

@@ -277,6 +277,7 @@ dependencies = [
  "moxing_fu",
  "renwu_zhixing_fu",
  "serde",
+ "zhuiwen_fu",
 ]
 
 [[package]]
