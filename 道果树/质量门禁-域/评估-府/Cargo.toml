@@ -1,0 +1,17 @@
+[package]
+name = "chengben_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "评估-府 - v4 阶段 15 性能基准 + 内存回归"
+
+[lib]
+name = "chengben_fu"
+path = "入口.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
