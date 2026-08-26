@@ -1,0 +1,18 @@
+[package]
+name = "shengji_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "升级-府 - 3 类升级策略（补丁/小/大版本）+ 错峰升级 + 复用经验入 36 格位（接 07-运营/升级/03-升级.md）"
+
+[lib]
+name = "shengji_fu"
+path = "入口.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+jiyi_chengzai_fu = { path = "../../../鸿蒙/基础设施-域/记忆承载-府" }

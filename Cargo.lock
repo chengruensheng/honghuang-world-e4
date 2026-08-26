@@ -462,6 +462,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "shengji_fu"
+version = "0.1.0"
+dependencies = [
+ "jiyi_chengzai_fu",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "shijie"
 version = "0.1.0"
 
