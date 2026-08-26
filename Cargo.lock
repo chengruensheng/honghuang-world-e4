@@ -274,6 +274,7 @@ name = "mingling_caozuo_fu"
 version = "0.1.0"
 dependencies = [
  "liushuixian_qudong_fu",
+ "moxing_fu",
  "renwu_zhixing_fu",
  "serde",
 ]

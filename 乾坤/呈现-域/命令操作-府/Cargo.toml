@@ -16,3 +16,5 @@ serde = { workspace = true }
 # 阶段 6：CLI 调流水线与任务执行
 liushuixian_qudong_fu = { path = "../../../鸿蒙/基础设施-域/流水线驱动-府" }
 renwu_zhixing_fu = { path = "../../../鸿蒙/基础设施-域/任务执行-府" }
+# 阶段 7 Day 5-6：CLI 接 LLM 调用器（端到端 mock e2e）
+moxing_fu = { path = "../../../鸿蒙/基础设施-域/模型连接-府" }
