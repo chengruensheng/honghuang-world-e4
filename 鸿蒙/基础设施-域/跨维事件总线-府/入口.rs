@@ -154,6 +154,7 @@ pub enum 错误 {
     },
     不可改(String),
     IO错误(String),
+    决策契约违反(Vec<String>),
 }
 
 impl std::fmt::Display for 错误 {
@@ -167,6 +168,12 @@ impl std::fmt::Display for 错误 {
             } => write!(f, "hash 不匹配 @{}：期望 {:x}，实际 {:x}", 位置, 期望, 实际),
             错误::不可改(msg) => write!(f, "frozen outcome：{}", msg),
             错误::IO错误(msg) => write!(f, "IO 错误：{}", msg),
+            错误::决策契约违反(违规列表) => write!(
+                f,
+                "决策契约违反（{} 条）：{}",
+                违规列表.len(),
+                违规列表.join("; ")
+            ),
         }
     }
 }
@@ -261,7 +268,12 @@ impl 事件流 {
     }
 
     /// 写入事件：填 id + prev_hash + hash，append 到 JSONL
+    ///
+    /// 决策契约：先调 guize_fu::校验决策契约（接 RULE_REGISTRY 14 条）
     pub fn 写入(&self, mut 事件: 事件) -> Result<u64, 错误> {
+        // 1. 决策契约关键字段校验：必须在写入前通过（接 RULE_REGISTRY 14 条）
+        let 契约原文 = format!("decided_by: {}\nfalsifiable: 上线 1 周", 事件.决定者);
+        guize_fu::校验关键字段(&契约原文).map_err(错误::决策契约违反)?;
         let mut inner = self.inner.lock().expect("事件流锁中毒");
         let id = inner.下一个ID;
         let prev = inner.最新hash;
@@ -526,6 +538,49 @@ mod 测试 {
         流.写入(e).unwrap();
         assert_eq!(流.下一个id(), 2);
         assert_ne!(流.最新hash(), 零哈希);
+    }
+
+    #[test]
+    fn 测试_决策契约接入_有效decided_by() {
+        // 合法：decided_by 填写 + 事件名规范 → 应通过
+        let s = 事件流::内存();
+        let 事件 = 事件::新建(事件类型::会话, 分发模式::瀑布, "测试事件", "界主", 1000);
+        assert!(s.写入(事件).is_ok(), "有效契约应通过");
+    }
+
+    #[test]
+    fn 测试_决策契约接入_缺decided_by_拒绝() {
+        // 缺 decided_by（空字符串）→ 规则注册表应拒绝
+        let s = 事件流::内存();
+        let mut 事件 = 事件::新建(事件类型::会话, 分发模式::瀑布, "测试事件", "界主", 1000);
+        事件.决定者 = "".to_string();
+        let r = s.写入(事件);
+        assert!(r.is_err(), "空 decided_by 应被规则拒绝");
+        assert!(
+            matches!(r.unwrap_err(), 错误::决策契约违反(_)),
+            "错误类型应为 决策契约违反"
+        );
+    }
+
+    #[test]
+    fn 测试_决策契约接入_100拒绝率() {
+        // 100 次缺 decided_by 写入 → 100% 拒绝
+        let s = 事件流::内存();
+        let mut 拒绝数 = 0;
+        for i in 0..100 {
+            let mut 事件 = 事件::新建(
+                事件类型::会话,
+                分发模式::瀑布,
+                format!("事件 {}", i),
+                "界主",
+                1000,
+            );
+            事件.决定者 = "".to_string();
+            if s.写入(事件).is_err() {
+                拒绝数 += 1;
+            }
+        }
+        assert_eq!(拒绝数, 100, "100 缺 decided_by 应 100% 拒绝");
     }
 
     #[test]

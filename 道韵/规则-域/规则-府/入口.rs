@@ -321,6 +321,35 @@ pub fn 校验决策契约(原文: &str) -> Result<(), Vec<String>> {
     }
 }
 
+/// 简化校验：仅检查 decided_by 非空 + falsifiable 包含可证伪命题
+/// 用于事件流 / 记忆写入路径（不需要完整 8 字段 frontmatter）
+pub fn 校验关键字段(原文: &str) -> Result<(), Vec<String>> {
+    let mut 缺失 = Vec::new();
+    if !原文.lines().any(|行| {
+        行.contains("decided_by:")
+            && 行
+                .split_once(':')
+                .map(|x| !x.1.trim().is_empty())
+                .unwrap_or(false)
+    }) {
+        缺失.push("decided_by".to_string());
+    }
+    if !原文.lines().any(|行| {
+        行.contains("falsifiable:")
+            && 行
+                .split_once(':')
+                .map(|x| !x.1.trim().is_empty())
+                .unwrap_or(false)
+    }) {
+        缺失.push("falsifiable".to_string());
+    }
+    if 缺失.is_empty() {
+        Ok(())
+    } else {
+        Err(缺失)
+    }
+}
+
 fn contains_yaml_field(原文: &str, 字段: &str) -> bool {
     let parts: Vec<&str> = 原文.splitn(3, "---").collect();
     if parts.len() < 3 {
@@ -339,6 +368,24 @@ fn contains_yaml_field(原文: &str, 字段: &str) -> bool {
 #[cfg(test)]
 mod 测试 {
     use super::*;
+
+    #[test]
+    fn 校验关键字段_有效() {
+        assert!(校验关键字段("decided_by: 界主\nfalsifiable: 上线 1 周").is_ok());
+    }
+
+    #[test]
+    fn 校验关键字段_缺decided_by拒绝() {
+        let r = 校验关键字段("falsifiable: 上线 1 周");
+        assert!(r.is_err());
+        assert_eq!(r.unwrap_err(), vec!["decided_by".to_string()]);
+    }
+
+    #[test]
+    fn 校验关键字段_空decided_by拒绝() {
+        let r = 校验关键字段("decided_by:\nfalsifiable: 上线 1 周");
+        assert!(r.is_err());
+    }
 
     #[test]
     fn rule_count等于14() {

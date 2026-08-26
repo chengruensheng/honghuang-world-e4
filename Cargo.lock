@@ -293,6 +293,7 @@ dependencies = [
 name = "kuawai_shijian_zongxian_fu"
 version = "0.1.0"
 dependencies = [
+ "guize_fu",
  "serde",
 ]
 
