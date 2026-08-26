@@ -1,0 +1,17 @@
+[package]
+name = "jianyan_gongju"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "校验-工具 - v4 阶段 16 架构校验 Rust 化（替代 PS 脚本）"
+
+[lib]
+name = "jianyan_gongju"
+path = "入口.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+walkdir = "2"
