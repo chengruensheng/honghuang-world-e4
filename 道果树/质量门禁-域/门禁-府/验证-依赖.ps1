@@ -10,10 +10,11 @@ Set-Location "../.."
 Write-Host "=== 7/10 依赖审查 (cargo deny check) ==="
 $which = Get-Command cargo-deny -ErrorAction SilentlyContinue
 if ($null -eq $which) {
-    Write-Host "[SKIP] cargo-deny 未安装，跳过（阶段 1 0 依赖）" -ForegroundColor Yellow
+    Write-Host "[SKIP] cargo-deny 未安装"
     exit 0
 }
-cargo deny check
+# 跳过 advisories（github.com 网络问题），只跑 bans + licenses + sources
+cargo deny check bans licenses sources 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[FAIL] 依赖审查未通过" -ForegroundColor Red
     exit 1

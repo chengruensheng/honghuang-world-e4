@@ -10,10 +10,11 @@ Set-Location "../.."
 Write-Host "=== 6/10 安全审计 (cargo audit) ==="
 $which = Get-Command cargo-audit -ErrorAction SilentlyContinue
 if ($null -eq $which) {
-    Write-Host "[SKIP] cargo-audit 未安装，跳过（阶段 1 0 依赖）" -ForegroundColor Yellow
+    Write-Host "[SKIP] cargo-audit 未安装" -ForegroundColor Yellow
     exit 0
 }
-cargo audit
+# 使用 --no-fetch 避免 github.com 网络问题（缓存可用）
+cargo audit --no-fetch 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[FAIL] 安全审计发现高危漏洞" -ForegroundColor Red
     exit 1

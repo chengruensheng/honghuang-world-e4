@@ -1,0 +1,18 @@
+[package]
+name = "moxing_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "模型连接-府 - LLM HTTP POST + 配置注入 + 4 分类 LLM 池（接 02-概念/可插拔/01-可插拔.md § 工具）"
+
+[lib]
+name = "moxing_fu"
+path = "入口.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+ureq = "2"

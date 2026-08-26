@@ -22,6 +22,8 @@ allow = [
     "Unicode-3.0",
     "CC0-1.0",
     "MPL-2.0",
+    # webpki-roots v0.26 / v1.0 (ureq 间接依赖)
+    "CDLA-Permissive-2.0",
 ]
 
 [bans]
