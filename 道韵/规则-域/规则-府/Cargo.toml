@@ -1,0 +1,15 @@
+[package]
+name = "guize_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "规则-府 - RULE_REGISTRY 单一真相源 + 决策契约字段校验（接 02-概念/规则注册表/06-规则注册表.md）"
+
+[lib]
+name = "guize_fu"
+path = "入口.rs"
+
+[dependencies]
+serde = { workspace = true }
