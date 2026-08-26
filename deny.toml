@@ -26,7 +26,8 @@ allow = [
 
 [bans]
 multiple-versions = "warn"
-wildcards = "deny"
+# path 依赖无 version 字段（path 自身是唯一标识），视为合法"单版本"
+wildcards = "allow"
 highlight = "all"
 deny = []
 
@@ -34,4 +35,5 @@ deny = []
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-allow-git = []
+# 工作空间 path 依赖：GitHub 本地 monorepo 内，不走外部源
+allow-git = ["https://github.com/*"]

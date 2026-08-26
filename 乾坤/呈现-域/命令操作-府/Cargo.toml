@@ -12,7 +12,7 @@ name = "mingling_caozuo_fu"
 path = "入口.rs"
 
 [dependencies]
-# 阶段 1 空骨架：仅预留依赖槽位（阶段 2+ 启用）
 serde = { workspace = true }
-
-
+# 阶段 6：CLI 调流水线与任务执行
+liushuixian_qudong_fu = { path = "../../../鸿蒙/基础设施-域/流水线驱动-府" }
+renwu_zhixing_fu = { path = "../../../鸿蒙/基础设施-域/任务执行-府" }
