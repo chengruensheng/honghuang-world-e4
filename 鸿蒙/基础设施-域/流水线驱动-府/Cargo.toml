@@ -1,0 +1,18 @@
+[package]
+name = "liushuixian_qudong_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "流水线驱动-府 - 4 阶段状态机（道祖→圣人→大罗→准圣→道祖）+ 不可跳层 + 不可反序（接 02-概念/流水线/02-流水线.md）"
+
+[lib]
+name = "liushuixian_qudong_fu"
+path = "入口.rs"
+
+[dependencies]
+# 阶段 1 空骨架：仅预留依赖槽位（阶段 2+ 启用）
+serde = { workspace = true }
+
+

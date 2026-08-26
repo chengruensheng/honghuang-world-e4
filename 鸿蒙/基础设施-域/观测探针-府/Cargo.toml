@@ -1,0 +1,18 @@
+[package]
+name = "guance_tanzhen_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "观测探针-府 - 24 项事件通道埋点 + 指标采集"
+
+[lib]
+name = "guance_tanzhen_fu"
+path = "入口.rs"
+
+[dependencies]
+# 阶段 1 空骨架：仅预留依赖槽位（阶段 2+ 启用）
+serde = { workspace = true }
+
+

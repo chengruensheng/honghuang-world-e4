@@ -1,0 +1,18 @@
+[package]
+name = "danyuan_ceshi_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "单元测试-府 - 测试承载（镜像被测服务）+ 概念测试枚举"
+
+[lib]
+name = "danyuan_ceshi_fu"
+path = "入口.rs"
+
+[dependencies]
+# 阶段 1 空骨架：仅预留依赖槽位（阶段 2+ 启用）
+serde = { workspace = true }
+
+

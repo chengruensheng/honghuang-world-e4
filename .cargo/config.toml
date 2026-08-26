@@ -1,0 +1,12 @@
+# cargo 配置（命名哲学保持中文）
+# 决策锚：260826-2230 工程-DSH § DSH 万物皆插件
+# 构建产物统一收敛到 道果树/构建物-域
+
+[build]
+target-dir = "道果树/构建物-域"
+
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld.exe"
+
+[net]
+git-fetch-with-cli = true

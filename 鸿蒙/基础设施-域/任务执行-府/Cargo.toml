@@ -1,0 +1,18 @@
+[package]
+name = "renwu_zhixing_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "任务执行-府 - LLM 池 + 工具循环 + 4 分类角色卡（接 02-概念/规则注册表/06-规则注册表.md）"
+
+[lib]
+name = "renwu_zhixing_fu"
+path = "入口.rs"
+
+[dependencies]
+# 阶段 1 空骨架：仅预留依赖槽位（阶段 2+ 启用）
+serde = { workspace = true }
+
+

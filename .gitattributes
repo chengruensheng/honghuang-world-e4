@@ -1,0 +1,15 @@
+# 决策锚：260826-2230 工程-DSH
+* text=auto eol=lf
+
+# Rust 源码统一 LF 行尾，diff 时不显示整文件换行差异
+*.rs text eol=lf diff=rust
+
+# 文档
+*.md text eol=lf diff=markdown
+
+# Shell 与 PowerShell 脚本
+*.sh text eol=lf
+*.ps1 text eol=crlf
+
+# 锁定文件
+Cargo.lock linguist-generated=true

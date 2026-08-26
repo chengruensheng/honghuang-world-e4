@@ -1,0 +1,18 @@
+[package]
+name = "mingling_caozuo_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "命令操作-府 - CLI 入口 + 命令解析 + 权限校验"
+
+[lib]
+name = "mingling_caozuo_fu"
+path = "入口.rs"
+
+[dependencies]
+# 阶段 1 空骨架：仅预留依赖槽位（阶段 2+ 启用）
+serde = { workspace = true }
+
+

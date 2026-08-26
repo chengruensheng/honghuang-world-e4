@@ -1,0 +1,19 @@
+# lefthook 配置 - 本地提交钩子
+# 决策锚：260826-2230 工程-DSH § 一键全验
+# pre-commit 强制跑 1/3/4 项门禁（格式 + 测试 + 编译）
+
+pre-commit:
+  parallel: false
+  commands:
+    格式:
+      run: pwsh 道果树/质量门禁-域/门禁-府/验证-格式.ps1
+    测试:
+      run: pwsh 道果树/质量门禁-域/门禁-府/验证-测试.ps1
+    编译:
+      run: pwsh 道果树/质量门禁-域/门禁-府/验证-编译.ps1
+
+pre-push:
+  parallel: false
+  commands:
+    全验:
+      run: bash 一键全验.sh

@@ -1,0 +1,16 @@
+[package]
+name = "shijie"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "世界 - 二进位入口（bin），阶段 1 仅承载工作空间收敛"
+
+[lib]
+name = "shijie"
+path = "入口.rs"
+
+[[bin]]
+name = "shijie"
+path = "二进制入口.rs"

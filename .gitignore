@@ -1,0 +1,40 @@
+# 道果树/构建物-域 与其内嵌的所有产物
+# 决策锚：260826-2230 工程-DSH
+道果树/构建物-域/
+道果树/构建物-域-debug/
+道果树/构建物-域-release/
+
+# 临时目录（AGENTS § 22.2 边界）
+临时文件夹/
+
+# 临时调试与回滚垫
+.上下文/
+*.tmp
+*.bak
+*.old
+*.swp
+*~
+
+# 编辑器与 IDE
+.idea/
+.vscode/
+*.iml
+
+# OS 产物
+.DS_Store
+Thumbs.db
+
+# Rust 工具链
+**/*.rs.bk
+
+# Agent 工具专属缓存（不入版本控制）
+.codeartsdoer/
+.codegraph/
+.arts/
+
+# Cargo 注册索引（不提交）
+.cargo/registry/
+.cargo/git/
+
+# dsh-memoir 自动生成的本地投影（不提交，由 ~/.dsh/memory 重新生成）
+PROJECT_MEMORY.md

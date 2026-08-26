@@ -1,0 +1,18 @@
+[package]
+name = "kuawai_shijian_zongxian_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "跨维事件总线-府 - 三类事件（会话/智能体/能力）+ Waterfall/Serial + hash 链（接 02-概念/事件流/04-事件流.md）"
+
+[lib]
+name = "kuawai_shijian_zongxian_fu"
+path = "入口.rs"
+
+[dependencies]
+# 阶段 1 空骨架：仅预留依赖槽位（阶段 2+ 启用）
+serde = { workspace = true }
+
+

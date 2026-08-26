@@ -1,0 +1,47 @@
+[workspace]
+resolver = "2"
+members = [
+    "鸿蒙/基础设施-域/插件上下文-府",
+    "鸿蒙/基础设施-域/跨维事件总线-府",
+    "鸿蒙/基础设施-域/记忆承载-府",
+    "鸿蒙/基础设施-域/状态共享-府",
+    "鸿蒙/基础设施-域/观测探针-府",
+    "鸿蒙/基础设施-域/日志记录-府",
+    "鸿蒙/基础设施-域/流水线驱动-府",
+    "鸿蒙/基础设施-域/任务执行-府",
+    "鸿蒙/世界配置-域/配置管理-府",
+    "乾坤/呈现-域/命令操作-府",
+    "证道/鸿蒙-域/单元测试-府",
+    "世界",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT OR Apache-2.0"
+authors = ["传承殿·界主"]
+description = "洪荒 · 世界 · v3 · 9 根维度 + 6 层结构 + 4 分类抽象"
+
+[workspace.dependencies]
+# 决策锚：260826-2230 工程-DSH § DSH 万物皆插件
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# 工程元数据
+[workspace.metadata.documentation]
+docsrs = false
+homepage = "传承殿/README.md"
+
+# 优化与警告
+[profile.dev]
+opt-level = 0
+debug = true
+
+[profile.release]
+opt-level = 3
+lto = "thin"

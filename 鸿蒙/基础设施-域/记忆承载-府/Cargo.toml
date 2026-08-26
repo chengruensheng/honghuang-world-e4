@@ -1,0 +1,18 @@
+[package]
+name = "jiyi_chengzai_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "记忆承载-府 - 36 格位（6 范畴 × 6 格位）+ 3 档投影（经/权/行）+ 3 源记录（代码/LLM/人类）（接 02-概念/记忆/03-记忆.md）"
+
+[lib]
+name = "jiyi_chengzai_fu"
+path = "入口.rs"
+
+[dependencies]
+# 阶段 1 空骨架：仅预留依赖槽位（阶段 2+ 启用）
+serde = { workspace = true }
+
+

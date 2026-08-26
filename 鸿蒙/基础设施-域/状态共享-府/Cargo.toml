@@ -1,0 +1,18 @@
+[package]
+name = "zhuangtai_gongxiang_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "状态共享-府 - 进程级状态读写 + 版本号"
+
+[lib]
+name = "zhuangtai_gongxiang_fu"
+path = "入口.rs"
+
+[dependencies]
+# 阶段 1 空骨架：仅预留依赖槽位（阶段 2+ 启用）
+serde = { workspace = true }
+
+

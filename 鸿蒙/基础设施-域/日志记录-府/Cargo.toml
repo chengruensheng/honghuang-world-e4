@@ -1,0 +1,18 @@
+[package]
+name = "rizhi_jilu_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "日志记录-府 - tracing 定制封装 + 结构化字段（接 02-概念/可插拔/01-可插拔.md § 工具）"
+
+[lib]
+name = "rizhi_jilu_fu"
+path = "入口.rs"
+
+[dependencies]
+# 阶段 1 空骨架：仅预留依赖槽位（阶段 2+ 启用）
+serde = { workspace = true }
+
+

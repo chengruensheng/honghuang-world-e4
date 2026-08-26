@@ -1,0 +1,11 @@
+# clippy 配置
+# 决策锚：260826-2230 工程-DSH § 一键全验
+# 命名哲学：避免英文滥用，所有项目内定义用中文
+
+avoid-breaking-exported-api = false
+disallowed-methods = []
+# 允许使用中文标识符（Rust 1.53+ 支持 unicode identifiers）
+cognitive-complexity-threshold = 30
+too-many-arguments-threshold = 8
+type-complexity-threshold = 250
+single-char-binding-names-threshold = 5

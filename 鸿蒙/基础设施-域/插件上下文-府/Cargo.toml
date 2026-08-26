@@ -1,0 +1,18 @@
+[package]
+name = "chajian_xiawenxian_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "插件上下文-府 - Service Definition trait + 注册表 + 查找（接 02-概念/可插拔/01-可插拔.md）"
+
+[lib]
+name = "chajian_xiawenxian_fu"
+path = "入口.rs"
+
+[dependencies]
+# 阶段 1 空骨架：仅预留依赖槽位（阶段 2+ 启用）
+serde = { workspace = true }
+
+
