@@ -14,5 +14,7 @@ path = "入口.rs"
 [dependencies]
 # 阶段 1 空骨架：仅预留依赖槽位（阶段 2+ 启用）
 serde = { workspace = true }
+# v3 MVP 收口后扩展：SQLite 经档持久化（实现 trait 记忆存储）
+rusqlite = { workspace = true }
 
 

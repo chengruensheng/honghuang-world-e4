@@ -36,6 +36,8 @@ thiserror = "1"
 anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+# v3 MVP 收口后扩展：SQLite 经档持久化
+rusqlite = { version = "0.32", features = ["bundled"] }
 
 # 工程元数据
 [workspace.metadata.documentation]
