@@ -791,6 +791,7 @@ dependencies = [
 name = "zhuiwen_fu"
 version = "0.1.0"
 dependencies = [
+ "moxing_fu",
  "renwu_zhixing_fu",
  "serde",
  "serde_json",
