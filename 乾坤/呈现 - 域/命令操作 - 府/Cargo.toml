@@ -21,3 +21,5 @@ moxing_fu = { path = "../../../鸿蒙/基础设施 - 域/模型连接 - 府" }
 # 阶段 8 Day 5：CLI 接追问+投票（e2e 端到端）
 # crate 名是 zhuiwen_fu (拼音) 不是 zhuwen_fu
 zhuiwen_fu = { path = "../../../鸿蒙/基础设施 - 域/追问引擎 - 府" }
+# 阶段 25号 AI自给自足 Step4：任务前读取相关格位（记忆闭环）
+jiyi_chengzai_fu = { path = "../../../鸿蒙/基础设施 - 域/记忆承载 - 府" }

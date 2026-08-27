@@ -4,13 +4,27 @@
 //! 用法：LLM_API_KEY=xxx cargo run -p mingling_caozuo_fu --example 真实流水线入口 -- <任务标识>
 //! 验证：真实 LLM 跑完整流水线（道祖→圣人→大罗→准圣→道祖终裁）
 
-use mingling_caozuo_fu::跑流水线_真实_llm;
+use mingling_caozuo_fu::{读取任务相关记忆, 跑流水线_真实_llm};
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let 任务标识 = args.first().map(|s| s.as_str()).unwrap_or("真实流水线测试");
-    println!("=== 端到端 4 分类协作（真实 LLM）===");
+    println!("=== 端到端 4 分类协作（真实 LLM + 记忆闭环）===");
     println!("任务：{}", 任务标识);
+
+    // 任务前自动读取相关格位（25号 AI自给自足 Step4）
+    println!(
+        "
+--- 任务前读取相关格位 ---"
+    );
+    let 相关记忆 = 读取任务相关记忆(任务标识);
+    if 相关记忆.is_empty() {
+        println!("  （无相关记忆命中）");
+    }
+    for 记忆 in &相关记忆 {
+        println!("  {}", 记忆);
+    }
+
     let 结果 = 跑流水线_真实_llm(任务标识);
     print!("{}", 结果.输出);
     std::process::exit(结果.退出码);
