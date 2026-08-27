@@ -155,8 +155,10 @@ impl 循环打回状态 {
     fn 落盘(&self, 任务ID: &str) {
         if let Some(路径) = &self.持久化_路径 {
             if let Some(连接) = Self::打开持久化(路径) {
+                // ON CONFLICT 更新语义：不重建主键行（INSERT OR REPLACE 会删行重建，
+                // 未来表加列时 REPLACE 会把未提供列重置为空，此处显式指定只更新计数字段）
                 let _ = 连接.execute(
-                    "INSERT OR REPLACE INTO 循环打回 (任务ID, 打回次数) VALUES (?1, ?2)",
+                    "INSERT INTO 循环打回 (任务ID, 打回次数) VALUES (?1, ?2)                      ON CONFLICT(任务ID) DO UPDATE SET 打回次数 = excluded.打回次数",
                     rusqlite::params![任务ID, self.打回次数(任务ID) as i64],
                 );
             }
