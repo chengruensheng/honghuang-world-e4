@@ -5,3 +5,7 @@
 #[path = "读取方法-阁/模块.rs"]
 pub mod 读取方法_阁;
 pub use 读取方法_阁::*;
+
+#[path = "记忆工具-阁/模块.rs"]
+pub mod 记忆工具_阁;
+pub use 记忆工具_阁::*;
