@@ -41,7 +41,9 @@ impl SQLite存储 {
                 内容 TEXT NOT NULL,
                 摘要 TEXT NOT NULL,
                 decided_by TEXT NOT NULL,
-                implements TEXT NOT NULL
+                implements TEXT NOT NULL,
+                hash INTEGER NOT NULL,
+                软放弃 INTEGER NOT NULL DEFAULT 0
             )",
             [],
         )
@@ -126,7 +128,7 @@ fn 来源_从串(s: &str) -> Option<来源> {
 impl 记忆存储 for SQLite存储 {
     fn 读(&self, id: 记忆ID) -> Option<记忆条目> {
         let mut stmt = self.db.prepare(
-            "SELECT 范畴, 阶段, 档位, 来源, 内容, 摘要, decided_by, implements FROM 记忆条目 WHERE id = ?1"
+            "SELECT 范畴, 阶段, 档位, 来源, 内容, 摘要, decided_by, implements, hash, 软放弃 FROM 记忆条目 WHERE id = ?1"
         ).ok()?;
         let row = stmt
             .query_row(rusqlite::params![id.0 as i64], |row| {
@@ -139,10 +141,12 @@ impl 记忆存储 for SQLite存储 {
                     row.get::<_, String>(5)?,
                     row.get::<_, String>(6)?,
                     row.get::<_, String>(7)?,
+                    row.get::<_, i64>(8)?,
+                    row.get::<_, i64>(9)?,
                 ))
             })
             .ok()?;
-        let 条目 = 记忆条目::新建(
+        let 条目 = 记忆条目::从持久化(
             id.0,
             范畴_从串(&row.0)?,
             阶段_从串(&row.1)?,
@@ -152,13 +156,19 @@ impl 记忆存储 for SQLite存储 {
             row.5,
             row.6,
             row.7,
+            row.8 as u64,
+            row.9 != 0,
         );
+        // 防篡改：hash 与字段不一致说明数据被篡改或损坏，拒绝返回
+        if !条目.校验哈希() {
+            return None;
+        }
         Some(条目)
     }
 
     fn 写(&mut self, 条目: 记忆条目) -> Result<(), 错误> {
         self.db.execute(
-            "INSERT OR REPLACE INTO 记忆条目 (id, 范畴, 阶段, 档位, 来源, 内容, 摘要, decided_by, implements) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            "INSERT OR REPLACE INTO 记忆条目 (id, 范畴, 阶段, 档位, 来源, 内容, 摘要, decided_by, implements, hash, 软放弃) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
             rusqlite::params![
                 条目.id.0 as i64,
                 范畴_到串(条目.范畴),
@@ -169,6 +179,8 @@ impl 记忆存储 for SQLite存储 {
                 条目.摘要,
                 条目.decided_by,
                 条目.implements,
+                条目.hash as i64,
+                条目.软放弃 as i64,
             ],
         ).map_err(|e| 错误::格位路径非法(format!("SQLite 写入失败：{}", e)))?;
         Ok(())
@@ -186,7 +198,7 @@ impl 记忆存储 for SQLite存储 {
 
     fn 查_全部(&self) -> Vec<记忆条目> {
         let mut stmt = match self.db.prepare(
-            "SELECT id, 范畴, 阶段, 档位, 来源, 内容, 摘要, decided_by, implements FROM 记忆条目",
+            "SELECT id, 范畴, 阶段, 档位, 来源, 内容, 摘要, decided_by, implements, hash, 软放弃 FROM 记忆条目",
         ) {
             Ok(s) => s,
             Err(_) => return Vec::new(),
@@ -202,15 +214,17 @@ impl 记忆存储 for SQLite存储 {
                 row.get::<_, String>(6)?,
                 row.get::<_, String>(7)?,
                 row.get::<_, String>(8)?,
+                row.get::<_, i64>(9)?,
+                row.get::<_, i64>(10)?,
             ))
         }) {
             Ok(r) => r,
             Err(_) => return Vec::new(),
         };
         rows.filter_map(|r| {
-            r.ok()
-                .and_then(|(id, cat, ph, lvl, src, content, summary, dec, imp)| {
-                    let 条目 = 记忆条目::新建(
+            r.ok().and_then(
+                |(id, cat, ph, lvl, src, content, summary, dec, imp, hash, 软)| {
+                    let 条目 = 记忆条目::从持久化(
                         id as u64,
                         范畴_从串(&cat)?,
                         阶段_从串(&ph)?,
@@ -220,9 +234,16 @@ impl 记忆存储 for SQLite存储 {
                         summary,
                         dec,
                         imp,
+                        hash as u64,
+                        软 != 0,
                     );
+                    // 防篡改：hash 不一致的条目跳过
+                    if !条目.校验哈希() {
+                        return None;
+                    }
                     Some(条目)
-                })
+                },
+            )
         })
         .collect()
     }
@@ -284,8 +305,18 @@ mod 测试_sqlite {
         let _ = std::fs::remove_file(&临时路径);
         {
             let mut s = SQLite存储::文件新建(临时路径.to_str().unwrap()).unwrap();
-            let mut 条目 = 测试条目(3);
-            条目.内容 = "持久化内容".to_string(); // mut 保留用于改 内容
+            // 构造时即带最终内容（构造后改内容会失效 hash，属篡改）
+            let 条目 = 记忆条目::新建(
+                3,
+                范畴::目标,
+                阶段::实施,
+                档位::行档,
+                来源::代码,
+                "持久化内容",
+                "test 摘要",
+                "界主",
+                "工程-DSH",
+            );
             s.写(条目).unwrap();
         }
         {
@@ -317,5 +348,60 @@ mod 测试_sqlite {
         assert_eq!(读.阶段, 阶段::归档);
         assert_eq!(读.档位, 档位::经档);
         assert_eq!(读.来源, 来源::人类);
+    }
+
+    #[test]
+    fn sqlite_软放弃_持久化() {
+        // 软放弃标志必须跨重启保留（frozen outcome 铁律）
+        let 临时路径 = std::env::temp_dir().join("sqlite_softabandon_test.db");
+        let _ = std::fs::remove_file(&临时路径);
+        {
+            let mut s = SQLite存储::文件新建(临时路径.to_str().unwrap()).unwrap();
+            let mut 条目 = 测试条目(5);
+            条目.软放弃(); // 标记软放弃
+            s.写(条目).unwrap();
+        }
+        {
+            let s = SQLite存储::文件新建(临时路径.to_str().unwrap()).unwrap();
+            let 读 = s.读(记忆ID(5)).unwrap();
+            assert!(读.软放弃, "软放弃标志应在重启后保留");
+            assert!(读.校验哈希(), "读回条目 hash 应有效");
+        }
+        let _ = std::fs::remove_file(&临时路径);
+    }
+
+    #[test]
+    fn sqlite_hash_防篡改() {
+        // 篡改内容后 hash 校验应失败，读回返回 None
+        let mut s = SQLite存储::内存新建().unwrap();
+        s.写(测试条目(6)).unwrap();
+        // 直接改数据库内容（模拟篡改）
+        s.db.execute("UPDATE 记忆条目 SET 内容 = '被篡改' WHERE id = 6", [])
+            .unwrap();
+        assert!(s.读(记忆ID(6)).is_none(), "篡改后读回应被拒绝");
+    }
+
+    #[test]
+    fn sqlite_从持久化_保留hash与软放弃() {
+        // 从持久化构造器应原样保留 hash 与 软放弃，不重算
+        let mut 条目 = 测试条目(7);
+        条目.软放弃();
+        let 原hash = 条目.hash;
+        let 持久化 = 记忆条目::从持久化(
+            条目.id.0,
+            条目.范畴,
+            条目.阶段,
+            条目.档位,
+            条目.来源,
+            条目.内容.clone(),
+            条目.摘要.clone(),
+            条目.decided_by.clone(),
+            条目.implements.clone(),
+            条目.hash,
+            条目.软放弃,
+        );
+        assert_eq!(持久化.hash, 原hash);
+        assert!(持久化.软放弃);
+        assert!(持久化.校验哈希());
     }
 }

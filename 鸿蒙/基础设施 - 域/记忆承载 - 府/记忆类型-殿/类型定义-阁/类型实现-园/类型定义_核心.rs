@@ -267,6 +267,54 @@ impl 记忆条目 {
         }
     }
 
+    /// 从持久化数据构造（不重算 hash，保留存储的 hash 与 软放弃 标志）
+    ///
+    /// 用于 SQLite 等持久化后端读回：hash 与 软放弃 必须原样保留，
+    /// 否则软放弃标志会丢失、hash 防篡改失效（违反 frozen outcome 铁律）。
+    pub fn 从持久化(
+        id: u64,
+        范畴: 范畴,
+        阶段: 阶段,
+        档位: 档位,
+        来源: 来源,
+        内容: impl Into<String>,
+        摘要: impl Into<String>,
+        decided_by: impl Into<String>,
+        implements: impl Into<String>,
+        hash: u64,
+        软放弃: bool,
+    ) -> Self {
+        Self {
+            id: 记忆ID(id),
+            范畴,
+            阶段,
+            档位,
+            来源,
+            内容: 内容.into(),
+            摘要: 摘要.into(),
+            decided_by: decided_by.into(),
+            implements: implements.into(),
+            hash,
+            软放弃,
+        }
+    }
+
+    /// 校验 hash 是否与当前字段一致（防篡改）
+    ///
+    /// 持久化后端读回时应调用：若返回 false，说明存储数据被篡改或损坏。
+    pub fn 校验哈希(&self) -> bool {
+        self.hash
+            == 算条目哈希(
+                self.id.0,
+                self.范畴,
+                self.阶段,
+                self.档位,
+                self.来源,
+                &self.内容,
+                &self.decided_by,
+            )
+    }
+
     pub fn 软放弃(&mut self) {
         self.软放弃 = true;
     }
