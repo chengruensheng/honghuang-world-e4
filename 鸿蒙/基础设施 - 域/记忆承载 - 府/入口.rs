@@ -37,4 +37,5 @@ pub use 记忆类型_殿::{
 
 // 存储操作殿：存储/检索 trait + 内存存储
 pub use 记忆存储_殿::内存存储_阁::内存存储;
+pub use 记忆存储_殿::SQLite存储_阁::SQLite实现_园::SQLite存储;
 pub use 记忆存储_殿::{记忆存储, 记忆检索};
