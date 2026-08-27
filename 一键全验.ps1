@@ -39,8 +39,9 @@ foreach ($项 in $门禁) {
         $跳过++
         continue
     }
-    & pwsh $脚本路径
-    if ($LASTEXITCODE -eq 0) {
+    & "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File $脚本路径
+    $退出码 = $LASTEXITCODE
+    if ($退出码 -eq 0) {
         $通过++
     } else {
         Write-Host "  [FAIL] $($项.名称) 未通过" -ForegroundColor Red
@@ -48,7 +49,6 @@ foreach ($项 in $门禁) {
     }
     Write-Host ""
 }
-
 Write-Host "╔══════════════════════════════════════════════╗"
 Write-Host "║  汇总：通过 $通过 / 失败 $失败 / 跳过 $跳过                ║"
 Write-Host "╚══════════════════════════════════════════════╝"

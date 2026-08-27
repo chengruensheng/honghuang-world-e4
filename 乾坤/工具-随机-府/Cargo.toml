@@ -1,0 +1,10 @@
+[package]
+name = "gongju_suiji_fu"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[lib]
+name = "gongju_suiji_fu"
+path = "入口.rs"
+

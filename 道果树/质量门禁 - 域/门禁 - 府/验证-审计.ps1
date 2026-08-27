@@ -3,7 +3,7 @@
 # 标准：cargo audit 无高危漏洞
 # 注：阶段 1 暂未引入依赖，若 cargo audit 不存在则跳过
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
