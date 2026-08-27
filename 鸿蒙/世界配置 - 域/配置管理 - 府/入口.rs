@@ -6,53 +6,16 @@
 //! 决策锚：260826-2230 工程-DSH § DSH 万物皆插件
 //! 关联文档：DSH 架构 system-prompt + scope
 
-use std::collections::HashMap;
-use std::env;
+#![allow(non_snake_case)]
 
-/// 配置读取特征
-pub trait 配置源: Send + Sync {
-    fn 取(&self, 键: &str) -> Option<String>;
-}
+#[path = "配置源-接口-殿/模块.rs"]
+pub mod 配置源_接口_殿;
+pub use 配置源_接口_殿::配置_契约_阁::接口契约_园::配置源;
 
-/// 环境变量配置源
-pub struct 环境变量配置;
+#[path = "环境-变量-实现-殿/模块.rs"]
+pub mod 环境_变量_实现_殿;
+pub use 环境_变量_实现_殿::环境_结构_阁::环境容器_园::环境变量配置;
 
-impl 配置源 for 环境变量配置 {
-    fn 取(&self, 键: &str) -> Option<String> {
-        env::var(键).ok()
-    }
-}
-
-/// 内存配置源（用于测试）
-#[derive(Default)]
-pub struct 内存配置 {
-    数据: HashMap<String, String>,
-}
-
-impl 内存配置 {
-    pub fn 新建() -> Self {
-        Self::default()
-    }
-    pub fn 置(&mut self, 键: impl Into<String>, 值: impl Into<String>) {
-        self.数据.insert(键.into(), 值.into());
-    }
-}
-
-impl 配置源 for 内存配置 {
-    fn 取(&self, 键: &str) -> Option<String> {
-        self.数据.get(键).cloned()
-    }
-}
-
-#[cfg(test)]
-mod 测试 {
-    use super::*;
-
-    #[test]
-    fn 内存配置读写一致() {
-        let mut c = 内存配置::新建();
-        c.置("模型", "MiniMax-M3");
-        assert_eq!(c.取("模型").as_deref(), Some("MiniMax-M3"));
-        assert_eq!(c.取("缺失"), None);
-    }
-}
+#[path = "内存-配置-实现-殿/模块.rs"]
+pub mod 内存_配置_实现_殿;
+pub use 内存_配置_实现_殿::内存_结构_阁::内存容器_园::内存配置;
