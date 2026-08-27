@@ -5,7 +5,7 @@
 // 跨阁引用：从殿层 re-export 拿各阁符号
 use super::super::super::{
     跑流水线_mock_llm, 跑流水线_反序, 跑流水线_循环打回, 跑流水线_跳层, Init命令, Run命令,
-    Status命令,
+    Status命令, 自检命令,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -55,6 +55,7 @@ pub fn 分发(参数: &[&str]) -> 命令结果 {
         "帮助" | "--help" | "-h" => 帮助命令.执行(&[]),
         "init" => Init命令.执行(&参数[1..]),
         "status" => Status命令.执行(&参数[1..]),
+        "自检" => 自检命令.执行(&参数[1..]),
         "run" => Run命令.执行(&参数[1..]),
         "e2e" => 跑流水线_mock_llm("e2e-默认任务"),
         "跳层测试" => 跑流水线_跳层(),

@@ -9,3 +9,7 @@ pub use 帮助_生成_阁::*;
 #[path = "命令-清单-阁/模块.rs"]
 pub mod 命令_清单_阁;
 pub use 命令_清单_阁::*;
+
+#[path = "状态-阁/模块.rs"]
+pub mod 状态_阁;
+pub use 状态_阁::*;
