@@ -14,5 +14,7 @@ path = "入口.rs"
 [dependencies]
 # 阶段 1 空骨架：仅预留依赖槽位（阶段 2+ 启用）
 serde = { workspace = true }
+# 阶段 9+：循环打回状态 SQLite 持久化（frozen outcome 铁律）
+rusqlite = { workspace = true }
 
 

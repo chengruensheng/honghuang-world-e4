@@ -103,10 +103,12 @@ pub fn 下一阶段(当前: 阶段, 请求: 跳转) -> Option<阶段> {
 // 循环打回计数（任务级状态）
 // ============================================================================
 
-/// 任务级循环打回计数（HashMap 模拟阶段 5 内存状态；阶段 9+ 接 SQLite）
+/// 任务级循环打回计数（阶段 9+ 支持 SQLite 持久化，frozen outcome 铁律）
 #[derive(Default)]
 pub struct 循环打回状态 {
     打回计数: HashMap<String, u32>,
+    /// SQLite 持久化文件路径（Some=持久化模式；None=纯内存，保持向后兼容）
+    持久化_路径: Option<String>,
 }
 
 impl 循环打回状态 {
@@ -114,11 +116,72 @@ impl 循环打回状态 {
         Self::default()
     }
 
+    /// 新建并接入 SQLite 持久化（加载已有打回计数；frozen outcome 留痕）
+    pub fn 新建_持久化(路径: &str) -> Self {
+        let mut 状态 = Self::default();
+        if let Some(连接) = Self::打开持久化(路径) {
+            // 加载已有计数
+            if let Ok(mut 语句) = 连接.prepare("SELECT 任务ID, 打回次数 FROM 循环打回")
+            {
+                if let Ok(行集) =
+                    语句.query_map([], |行| Ok((行.get::<_, String>(0)?, 行.get::<_, i64>(1)?)))
+                {
+                    for 行 in 行集.flatten() {
+                        状态.打回计数.insert(行.0, 行.1 as u32);
+                    }
+                }
+            }
+            状态.持久化_路径 = Some(路径.to_string());
+        }
+        状态
+    }
+
+    /// 打开 SQLite 连接并建表（失败返回 None，退化为内存模式）
+    fn 打开持久化(路径: &str) -> Option<rusqlite::Connection> {
+        let 连接 = rusqlite::Connection::open(路径).ok()?;
+        连接
+            .execute(
+                "CREATE TABLE IF NOT EXISTS 循环打回 (
+                    任务ID TEXT PRIMARY KEY,
+                    打回次数 INTEGER NOT NULL
+                )",
+                [],
+            )
+            .ok()?;
+        Some(连接)
+    }
+
+    /// 持久化当前计数（UPSERT）
+    fn 落盘(&self, 任务ID: &str) {
+        if let Some(路径) = &self.持久化_路径 {
+            if let Some(连接) = Self::打开持久化(路径) {
+                let _ = 连接.execute(
+                    "INSERT OR REPLACE INTO 循环打回 (任务ID, 打回次数) VALUES (?1, ?2)",
+                    rusqlite::params![任务ID, self.打回次数(任务ID) as i64],
+                );
+            }
+        }
+    }
+
+    /// 删除任务记录（重置时调用）
+    fn 删除落盘(&self, 任务ID: &str) {
+        if let Some(路径) = &self.持久化_路径 {
+            if let Some(连接) = Self::打开持久化(路径) {
+                let _ = 连接.execute(
+                    "DELETE FROM 循环打回 WHERE 任务ID = ?1",
+                    rusqlite::params![任务ID],
+                );
+            }
+        }
+    }
+
     /// 增加打回计数；返回新的打回次数
     pub fn 增加打回(&mut self, 任务ID: &str) -> u32 {
         let 计数 = self.打回计数.entry(任务ID.to_string()).or_insert(0);
         *计数 += 1;
-        *计数
+        let 新计数 = *计数;
+        self.落盘(任务ID);
+        新计数
     }
 
     /// 获取当前打回次数
@@ -134,6 +197,7 @@ impl 循环打回状态 {
     /// 重置（任务完成时调用）
     pub fn 重置(&mut self, 任务ID: &str) {
         self.打回计数.remove(任务ID);
+        self.删除落盘(任务ID);
     }
 }
 
@@ -262,5 +326,65 @@ mod 测试 {
         状态.增加打回("task-002");
         assert_eq!(状态.打回次数("task-001"), 2);
         assert_eq!(状态.打回次数("task-002"), 1);
+    }
+
+    // ---------- 循环打回 SQLite 持久化（frozen outcome 铁律） ----------
+
+    #[test]
+    fn 打回_持久化_跨重启保留() {
+        let 临时路径 = std::env::temp_dir().join("循环打回_持久化测试.db");
+        let _ = std::fs::remove_file(&临时路径);
+        {
+            let mut 状态 = 循环打回状态::新建_持久化(临时路径.to_str().unwrap());
+            状态.增加打回("task-001");
+            状态.增加打回("task-001");
+            assert_eq!(状态.打回次数("task-001"), 2);
+        }
+        {
+            let 状态 = 循环打回状态::新建_持久化(临时路径.to_str().unwrap());
+            assert_eq!(
+                状态.打回次数("task-001"),
+                2,
+                "重启后打回计数应保留（frozen outcome）"
+            );
+            assert!(!状态.应升级道祖("task-001"));
+        }
+        let _ = std::fs::remove_file(&临时路径);
+    }
+
+    #[test]
+    fn 打回_持久化_升级道祖判定() {
+        let 临时路径 = std::env::temp_dir().join("循环打回_升级测试.db");
+        let _ = std::fs::remove_file(&临时路径);
+        {
+            let mut 状态 = 循环打回状态::新建_持久化(临时路径.to_str().unwrap());
+            状态.增加打回("task-001");
+            状态.增加打回("task-001");
+            状态.增加打回("task-001");
+        }
+        {
+            let 状态 = 循环打回状态::新建_持久化(临时路径.to_str().unwrap());
+            assert!(
+                状态.应升级道祖("task-001"),
+                "3 次打回持久化后重启应判定升级道祖"
+            );
+        }
+        let _ = std::fs::remove_file(&临时路径);
+    }
+
+    #[test]
+    fn 打回_持久化_重置后删除() {
+        let 临时路径 = std::env::temp_dir().join("循环打回_重置测试.db");
+        let _ = std::fs::remove_file(&临时路径);
+        {
+            let mut 状态 = 循环打回状态::新建_持久化(临时路径.to_str().unwrap());
+            状态.增加打回("task-001");
+            状态.重置("task-001");
+        }
+        {
+            let 状态 = 循环打回状态::新建_持久化(临时路径.to_str().unwrap());
+            assert_eq!(状态.打回次数("task-001"), 0, "重置后重启打回计数应为 0");
+        }
+        let _ = std::fs::remove_file(&临时路径);
     }
 }
