@@ -1,0 +1,8 @@
+[package]
+name = "gongju_hello_fu"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "gongju_hello_fu"
+path = "入口.rs"

@@ -149,6 +149,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "gongju_hello_fu"
+version = "0.1.0"
+
+[[package]]
 name = "guance_tanzhen_fu"
 version = "0.1.0"
 dependencies = [
