@@ -54,3 +54,53 @@
 *传承殿 · 2026-08-26 · decided_by: 界主*
 *implements: 元·元（治理的治理）*
 *falsifiable: 上线 3 个月，17 条铁律的违反率 < 5%*
+## 五、AI 助手执行流程（Round 11+ 起强制 · decision anchor: 260827-AI助手自给自足）
+
+### 流程起点：每次开始新任务时
+
+```bash
+# 1. 必跑自检命令（项目状态第一手信息）
+cargo run -p mingling_caozuo_fu --example 自检入口 -- 自检
+# 或：cargo build -p mingling_caozuo_fu --example 自检入口 && cargo run -p mingling_caozuo_fu --example 自检入口 -- 自检
+
+# 期望：13/13 通过（10 cargo + 3 powershell 门禁），如失败先修再开发
+```
+
+### 5 个必读文档（开始任务前必读，不是建议）
+
+1. 传承殿/README.md — 项目入口 + 当前 23 crate/251 测试/13 门禁基线
+2. 传承殿/10-地基/16-统一六层风格-实施方案.md — 6 层结构定义
+3. 传承殿/10-地基/14-命名唯一性门禁-实施方案.md — 命名白名单 + 判规则
+4. 传承殿/04-设计/命名哲学-判据.md — 祖孙三层语义判据
+5. 传承殿/03-决策/已定/ 全部决策（≥9 文件）— 历史决策上下文
+
+### 自动检查命令清单（每次 commit 前必跑）
+
+| 检查 | 命令 | 期望 |
+|:--|:--|:--|
+| 格式 | cargo fmt --all -- --check | 0 diff |
+| 静态分析 | cargo clippy --workspace --all-targets -- -D warnings | 0 警告 |
+| 单元测试 | cargo test --workspace --lib --test-threads=1 | 全过 |
+| 架构校验 | cargo test -p jianyan_gongju --lib | 15 项全过 |
+| 决策契约 | powershell -NoProfile -ExecutionPolicy Bypass -File 道果树/质量门禁 - 域/门禁 - 府/验证-决策契约.ps1 | 9 文件 PASS |
+| 命名唯一性 | 同上 验证-命名唯一性.ps1 | PASS |
+| 防退化 ≥2 殿 | cargo test -p jianyan_gongju --lib 测试_跑全部_返回15项 | PASS |
+
+### 命名白名单（中文目录名）
+
+允许英文：SQLite、P0、P1、P2、P3、CI/CD 类标准词。其他情况禁止英文。
+
+祖孙三层语义判据：阁 = 方法契约（接口），园 = 实现实例，核心名必须不同（如「写入方法阁」vs「写入实现园」可，但「写入阁」vs「写入园」违规）。
+
+### 6 层结构模板（府 ≥2 殿 ≥2 阁 ≥1 园）
+
+参考 16-统一六层风格-实施方案.md。新建 crate 必须遵循：府 = lib 入口（pinyin_xxx_fu 命名）；殿 ≥2，每个殿 ≥2 阁（拒绝单链中间层）；阁 ≥1，每个阁 ≥1 园。
+
+### 跨 crate 命名唯一（v3 规则）
+
+同名阁不能在两个不同殿下存在（例：命令元数据-殿/状态-阁 + 命令调度-殿/状态-阁 违规 → 后者改名「自检-阁」）。
+
+---
+
+*AGENTS § 18+ 新增 · 2026-08-27 · Round 11 · 决策锚：260827-AI助手自给自足*
+*falsifiable: AI 助手开始新任务前自动调用自检命令（无人类提示）*

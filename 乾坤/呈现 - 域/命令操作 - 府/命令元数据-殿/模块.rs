@@ -10,6 +10,6 @@ pub use 帮助_生成_阁::*;
 pub mod 命令_清单_阁;
 pub use 命令_清单_阁::*;
 
-#[path = "状态-阁/模块.rs"]
-pub mod 状态_阁;
-pub use 状态_阁::*;
+#[path = "自检-阁/模块.rs"]
+pub mod 自检_阁;
+pub use 自检_阁::*;

@@ -4,7 +4,7 @@
 //! 用法：cargo run -p mingling_caozuo_fu --example 自检入口 -- [--help|init|status|run --task=|自检]
 //! 备注：本示例跑分发函数（所有命令），重点跑「自检」输出 13 项门禁状态
 
-use mingling_caozuo_fu::{分发};
+use mingling_caozuo_fu::分发;
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
