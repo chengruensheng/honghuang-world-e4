@@ -5,18 +5,27 @@ use crate::模型池_殿::{LLM池, LLM配置};
 /// 从环境变量构造 4 分类 LLM 池
 /// 环境变量约定：
 /// - LLM_API_KEY (必需，Bearer token)
-/// - LLM_BASE_URL (默认 https://api.openai.com/v1/chat/completions)
+/// - LLM_BASE_URL (空串视为未设；回退 DEEPSEEK_URL → 默认 https://api.openai.com/v1/chat/completions)
 /// - LLM_MODEL_DAOZU / LLM_MODEL_SHENGREN / LLM_MODEL_ZHUNSHENG / LLM_MODEL_DALUO (4 分类，未设置则用 LLM_MODEL)
-/// - LLM_MODEL (默认 gpt-3.5-turbo)
+/// - LLM_MODEL (空串视为未设；回退 DEEPSEEK_MODEL → 默认 gpt-3.5-turbo)
 /// - LLM_TIMEOUT_MS (默认 30000)
 ///
 /// 返回 None 表示 LLM_API_KEY 未设置（调用方应降级到 mock）
 pub fn 从环境变量构造() -> Option<LLM池> {
     use std::env;
     let 密钥 = env::var("LLM_API_KEY").ok().filter(|s| !s.is_empty())?;
+    // 端点优先 LLM_BASE_URL（空串视为未设）→ 回退 DEEPSEEK_URL（本机已注入的模型服务）→ OpenAI 兜底
     let 端点 = env::var("LLM_BASE_URL")
-        .unwrap_or_else(|_| "https://api.openai.com/v1/chat/completions".to_string());
-    let 默认模型 = env::var("LLM_MODEL").unwrap_or_else(|_| "gpt-3.5-turbo".to_string());
+        .ok()
+        .filter(|s| !s.is_empty())
+        .or_else(|| env::var("DEEPSEEK_URL").ok().filter(|s| !s.is_empty()))
+        .unwrap_or_else(|| "https://api.openai.com/v1/chat/completions".to_string());
+    // 默认模型同样三级回退：LLM_MODEL → DEEPSEEK_MODEL → gpt-3.5-turbo
+    let 默认模型 = env::var("LLM_MODEL")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .or_else(|| env::var("DEEPSEEK_MODEL").ok().filter(|s| !s.is_empty()))
+        .unwrap_or_else(|| "gpt-3.5-turbo".to_string());
     let 超时 = env::var("LLM_TIMEOUT_MS")
         .ok()
         .and_then(|s| s.parse::<u32>().ok())
@@ -137,5 +146,42 @@ mod 测试 {
         assert_eq!(池.道祖池.as_ref().unwrap().超时毫秒, 60000);
         std::env::remove_var("LLM_API_KEY");
         std::env::remove_var("LLM_TIMEOUT_MS");
+    }
+
+    #[test]
+    fn 测试_空BASE_URL回退DEEPSEEK端点() {
+        let _g = env_lock();
+        std::env::set_var("LLM_API_KEY", "sk-test");
+        std::env::set_var("LLM_BASE_URL", "");
+        std::env::set_var("DEEPSEEK_URL", "https://token-plan-cn.xiaomimimo.com");
+        std::env::remove_var("LLM_MODEL");
+        std::env::remove_var("DEEPSEEK_MODEL");
+        let 池 = 从环境变量构造().unwrap();
+        assert_eq!(
+            池.道祖池.as_ref().unwrap().端点,
+            "https://token-plan-cn.xiaomimimo.com",
+            "LLM_BASE_URL 空串应回退 DEEPSEEK_URL"
+        );
+        std::env::remove_var("LLM_API_KEY");
+        std::env::remove_var("LLM_BASE_URL");
+        std::env::remove_var("DEEPSEEK_URL");
+    }
+
+    #[test]
+    fn 测试_空MODEL回退DEEPSEEK模型() {
+        let _g = env_lock();
+        std::env::set_var("LLM_API_KEY", "sk-test");
+        std::env::set_var("LLM_MODEL", "");
+        std::env::set_var("DEEPSEEK_MODEL", "mimo-v2.5-pro");
+        std::env::remove_var("LLM_MODEL_DAOZU");
+        let 池 = 从环境变量构造().unwrap();
+        assert_eq!(
+            池.道祖池.as_ref().unwrap().模型,
+            "mimo-v2.5-pro",
+            "LLM_MODEL 空串应回退 DEEPSEEK_MODEL"
+        );
+        std::env::remove_var("LLM_API_KEY");
+        std::env::remove_var("LLM_MODEL");
+        std::env::remove_var("DEEPSEEK_MODEL");
     }
 }
