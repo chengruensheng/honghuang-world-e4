@@ -111,7 +111,7 @@ pub fn 跑全检(项目根: &Path) -> 自检报告 {
             3,
             "单元测试 (cargo test)",
             "cargo",
-            &["test", "--workspace", "--lib"],
+            &["test", "--workspace", "--lib", "--", "--test-threads=1"],
             项目根,
         ),
         检查命令(
