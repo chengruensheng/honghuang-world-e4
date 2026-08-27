@@ -6,6 +6,7 @@
 
 use std::path::Path;
 
+use crate::架构校验_殿::检查_府级crate至少2殿;
 use crate::架构校验_殿::{
     校验项, 检查_README, 检查_crate命名风格, 检查_workspace_members, 检查_传承殿8大类,
     检查_同层命名唯一, 检查_实施方案文档, 检查_府crate_入口rs, 检查_所有目录含中文, 检查_无_github,
@@ -112,6 +113,11 @@ pub fn 跑全部(根: &Path) -> Vec<校验项> {
             名称: "目录名无英文残留".into(),
             结果: 检查_目录名无英文(根),
         },
+        校验项 {
+            编号: 15,
+            名称: "所有府级 crate ≥2 殿（防退化）".into(),
+            结果: 检查_府级crate至少2殿(根),
+        },
     ]
 }
 
@@ -120,9 +126,9 @@ mod 测试 {
     use super::*;
 
     #[test]
-    fn 测试_跑全部_返回14项() {
+    fn 测试_跑全部_返回15项() {
         let items =
             跑全部(&std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")));
-        assert_eq!(items.len(), 14);
+        assert_eq!(items.len(), 15);
     }
 }
