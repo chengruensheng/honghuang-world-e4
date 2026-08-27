@@ -6,50 +6,16 @@
 //! 决策锚：260826-2230 工程-DSH § DSH 万物皆插件
 //! 关联文档：DSH 架构 tracing 子系统
 
-/// 日志级别（与 tracing::Level 对应）
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum 级别 {
-    跟踪,
-    调试,
-    信息,
-    警告,
-    错误,
-}
+#![allow(non_snake_case)]
 
-/// 日志特征：所有日志实现必须满足
-pub trait 日志: Send + Sync {
-    fn 输出(&self, 级别: 级别, 消息: &str);
-}
+#[path = "日志-接口-殿/模块.rs"]
+pub mod 日志_接口_殿;
+pub use 日志_接口_殿::日志契约_阁::日志契约定义_园::日志;
 
-/// 标准输出日志（阶段 1 占位实现）
-pub struct 标准输出日志;
+#[path = "级别-定义-殿/模块.rs"]
+pub mod 级别_定义_殿;
+pub use 级别_定义_殿::级别_枚举_阁::级别枚举_园::级别;
 
-impl 标准输出日志 {
-    pub fn 新建() -> Self {
-        Self
-    }
-}
-
-impl 日志 for 标准输出日志 {
-    fn 输出(&self, 级别: 级别, 消息: &str) {
-        let 前缀 = match 级别 {
-            级别::跟踪 => "[TRC]",
-            级别::调试 => "[DBG]",
-            级别::信息 => "[INF]",
-            级别::警告 => "[WRN]",
-            级别::错误 => "[ERR]",
-        };
-        println!("{} {}", 前缀, 消息);
-    }
-}
-
-#[cfg(test)]
-mod 测试 {
-    use super::*;
-
-    #[test]
-    fn 级别变体数匹配() {
-        let 所有 = [级别::跟踪, 级别::调试, 级别::信息, 级别::警告, 级别::错误];
-        assert_eq!(所有.len(), 5);
-    }
-}
+#[path = "输出-实现-殿/模块.rs"]
+pub mod 输出_实现_殿;
+pub use 输出_实现_殿::输出_结构_阁::输出结构定义_园::标准输出日志;
