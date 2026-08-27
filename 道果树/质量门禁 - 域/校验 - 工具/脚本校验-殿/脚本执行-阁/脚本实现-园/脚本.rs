@@ -8,8 +8,8 @@ use std::path::Path;
 
 use crate::架构校验_殿::{
     校验项, 检查_README, 检查_crate命名风格, 检查_workspace_members, 检查_传承殿8大类,
-    检查_实施方案文档, 检查_府crate_入口rs, 检查_所有目录含中文, 检查_无_github, 检查_无_src平铺,
-    检查结果,
+    检查_同层命名唯一, 检查_实施方案文档, 检查_府crate_入口rs, 检查_所有目录含中文, 检查_无_github,
+    检查_无_src平铺, 检查_目录名无英文, 检查_祖孙不同名, 检查结果,
 };
 
 pub fn 检查_门禁脚本(根: &Path) -> 检查结果 {
@@ -97,6 +97,21 @@ pub fn 跑全部(根: &Path) -> Vec<校验项> {
             名称: "README 存在".into(),
             结果: 检查_README(根),
         },
+        校验项 {
+            编号: 12,
+            名称: "殿/阁/园 祖孙不同名".into(),
+            结果: 检查_祖孙不同名(根),
+        },
+        校验项 {
+            编号: 13,
+            名称: "同层命名全局唯一".into(),
+            结果: 检查_同层命名唯一(根),
+        },
+        校验项 {
+            编号: 14,
+            名称: "目录名无英文残留".into(),
+            结果: 检查_目录名无英文(根),
+        },
     ]
 }
 
@@ -105,9 +120,9 @@ mod 测试 {
     use super::*;
 
     #[test]
-    fn 测试_跑全部_返回11项() {
+    fn 测试_跑全部_返回14项() {
         let items =
             跑全部(&std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")));
-        assert_eq!(items.len(), 11);
+        assert_eq!(items.len(), 14);
     }
 }

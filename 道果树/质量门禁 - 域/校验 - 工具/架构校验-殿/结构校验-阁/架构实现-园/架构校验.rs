@@ -263,6 +263,174 @@ pub fn 检查_README(根: &Path) -> 检查结果 {
         检查结果::失败("README 不存在".to_string())
     }
 }
+// ============================================================================
+// 命名唯一性门禁（14 号方案 · 260827-命名门禁）
+// 规则 1：祖孙不同名；规则 2：同层全局唯一；规则 3：目录名无英文残留
+// ============================================================================
+
+const 层级后缀: [&str; 8] = [
+    "-殿", "-阁", "-园", "-数据", "-配置", "-模板", "-脚本", "-资源",
+];
+
+fn 取层级(name: &str) -> Option<&str> {
+    层级后缀.iter().copied().find(|s| name.ends_with(s))
+}
+
+fn 去层级后缀(name: &str, suffix: &str) -> String {
+    name[..name.len() - suffix.len()].to_string()
+}
+
+fn 是排除目录2(p: &Path) -> bool {
+    let s = p.to_string_lossy();
+    [
+        ".git",
+        "构建物 - 域",
+        "构建物-域",
+        "debug",
+        "doc",
+        "target",
+        "node_modules",
+    ]
+    .iter()
+    .any(|e| s.contains(e))
+}
+
+/// 规则 1：同一府路径下，殿/阁/园 名（去后缀）两两不同。
+pub fn 检查_祖孙不同名(根: &Path) -> 检查结果 {
+    let mut 违规 = Vec::new();
+    for entry in walkdir::WalkDir::new(根).max_depth(8).into_iter().flatten() {
+        let p = entry.path();
+        if !p.is_dir() {
+            continue;
+        }
+        if 是排除目录2(p) {
+            continue;
+        }
+        let name = match p.file_name().and_then(|s| s.to_str()) {
+            Some(n) => n,
+            None => continue,
+        };
+        let Some(后缀) = 取层级(name) else {
+            continue;
+        };
+        if 后缀 != "-殿" {
+            continue;
+        } // 只从殿层开始检查
+        let 殿名 = 去层级后缀(name, "-殿");
+        // 收集该殿目录下所有阁/园名
+        let mut 名集 = vec![殿名];
+        let mut 子违规 = Vec::new();
+        for sub in walkdir::WalkDir::new(p).max_depth(4).into_iter().flatten() {
+            if !sub.path().is_dir() {
+                continue;
+            }
+            if sub.path() == p {
+                continue;
+            }
+            let sn = match sub.path().file_name().and_then(|s| s.to_str()) {
+                Some(n) => n,
+                None => continue,
+            };
+            let Some(ss) = 取层级(sn) else { continue };
+            if ss == "-殿" {
+                continue;
+            } // 不跨殿（理论上殿下无殿）
+            名集.push(去层级后缀(sn, ss));
+        }
+        // 查重复
+        let mut seen = std::collections::HashMap::new();
+        for n in 名集 {
+            let e = seen.entry(n.clone()).or_insert(0u32);
+            *e += 1;
+        }
+        for (n, cnt) in seen {
+            if cnt > 1 {
+                子违规.push(n);
+            }
+        }
+        if !子违规.is_empty() {
+            违规.push(format!("{}: 祖孙同名 {:?}", p.display(), 子违规));
+        }
+    }
+    if 违规.is_empty() {
+        检查结果::通过
+    } else {
+        检查结果::失败(format!("祖孙同名违规：{}", 违规.join("；")))
+    }
+}
+
+/// 规则 2：全项目 `-殿`、`-阁`、`-园` 名各自唯一（跨府不重名）。
+pub fn 检查_同层命名唯一(根: &Path) -> 检查结果 {
+    let mut 计数: std::collections::HashMap<String, (u32, Vec<String>)> =
+        std::collections::HashMap::new();
+    for entry in walkdir::WalkDir::new(根).max_depth(8).into_iter().flatten() {
+        let p = entry.path();
+        if !p.is_dir() {
+            continue;
+        }
+        if 是排除目录2(p) {
+            continue;
+        }
+        let name = match p.file_name().and_then(|s| s.to_str()) {
+            Some(n) => n,
+            None => continue,
+        };
+        let Some(后缀) = 取层级(name) else {
+            continue;
+        };
+        let 名 = 去层级后缀(name, 后缀);
+        let e = 计数.entry(名.clone()).or_insert((0, Vec::new()));
+        e.0 += 1;
+        e.1.push(p.display().to_string());
+    }
+    let mut 违规 = Vec::new();
+    for (名, (cnt, paths)) in 计数 {
+        if cnt > 1 {
+            违规.push(format!("{} 出现 {} 次：{}", 名, cnt, paths.join(" vs ")));
+        }
+    }
+    if 违规.is_empty() {
+        检查结果::通过
+    } else {
+        检查结果::失败(format!("同层命名重复：{}", 违规.join("；")))
+    }
+}
+
+/// 规则 3：目录名（去层级后缀）不得含 ASCII 字母；白名单：SQLite、P0-P3。
+pub fn 检查_目录名无英文(根: &Path) -> 检查结果 {
+    let 允许前缀: [&str; 5] = ["SQLite", "P0", "P1", "P2", "P3"];
+    let mut 违规 = Vec::new();
+    for entry in walkdir::WalkDir::new(根).max_depth(8).into_iter().flatten() {
+        let p = entry.path();
+        if !p.is_dir() {
+            continue;
+        }
+        if 是排除目录2(p) {
+            continue;
+        }
+        let name = match p.file_name().and_then(|s| s.to_str()) {
+            Some(n) => n,
+            None => continue,
+        };
+        let 名 = match 取层级(name) {
+            Some(s) => 去层级后缀(name, s),
+            None => name.to_string(),
+        };
+        let 含英文 = 名.chars().any(|ch| ch.is_ascii_alphabetic());
+        if !含英文 {
+            continue;
+        }
+        let 白名单 = 允许前缀.iter().any(|pre| 名.starts_with(pre));
+        if !白名单 {
+            违规.push(format!("{}（目录 {}）", 名, p.display()));
+        }
+    }
+    if 违规.is_empty() {
+        检查结果::通过
+    } else {
+        检查结果::失败(format!("英文目录名：{}", 违规.join("；")))
+    }
+}
 
 #[cfg(test)]
 mod 测试 {
