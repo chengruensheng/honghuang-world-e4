@@ -8,7 +8,12 @@ on:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    name: 一键全验 (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - name: 检出
         uses: actions/checkout@v4
@@ -17,11 +22,27 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.75
+          components: rustfmt, clippy
 
-      - name: 缓存 cargo
+      - name: 安装 PowerShell (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        uses: microsoft/powershell@v1
+        with:
+          pwsh: true
+
+      - name: 缓存 cargo（target-dir = 道果树/构建物 - 域）
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: "洪蒙 -> 道果树/构建物 - 域"
+          cache-on-failure: true
 
-      - name: 一键全验 10 项
-        run: bash 一键全验.sh
+      - name: 格式检查 (cargo fmt --check)
+        run: cargo fmt --all -- --check
+
+      - name: 静态分析 (cargo clippy -D warnings)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: 单元测试 (cargo test --workspace)
+        run: cargo test --workspace --lib
+
+      - name: 一键全验 13 项
+        run: bash ./一键全验.sh
