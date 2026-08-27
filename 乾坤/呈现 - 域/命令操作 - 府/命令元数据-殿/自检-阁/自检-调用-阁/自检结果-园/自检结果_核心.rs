@@ -204,10 +204,16 @@ pub fn 跑全检(项目根: &Path) -> 自检报告 {
             11,
             "依赖审查 (cargo deny)",
             "cargo",
-            &["deny", "check"],
+            &["deny", "check", "bans", "licenses", "sources"],
             项目根,
         ),
-        检查命令(12, "安全审计 (cargo audit)", "cargo", &["audit"], 项目根),
+        检查命令(
+            12,
+            "安全审计 (cargo audit)",
+            "cargo",
+            &["audit", "--no-fetch"],
+            项目根,
+        ),
         检查命令(
             13,
             "文档 (cargo doc)",
