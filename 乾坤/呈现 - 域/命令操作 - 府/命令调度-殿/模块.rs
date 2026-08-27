@@ -1,4 +1,4 @@
-//! 命令调度-殿 模块桥接 - 桥接 init/status/run/e2e/核心 五阁
+//! 命令调度-殿 模块桥接 - 桥接 init/status/run/e2e/核心/真实-后端-选择 六阁
 
 #[path = "初始化-阁/模块.rs"]
 pub mod 初始化_阁;
@@ -6,6 +6,8 @@ pub mod 初始化_阁;
 pub mod 命令核心_阁;
 #[path = "状态-阁/模块.rs"]
 pub mod 状态_阁;
+#[path = "真实-后端-选择-殿/模块.rs"]
+pub mod 真实_后端_选择_殿;
 #[path = "端到端-阁/模块.rs"]
 pub mod 端到端_阁;
 #[path = "运行-阁/模块.rs"]
@@ -15,7 +17,10 @@ pub mod 运行_阁;
 pub use 初始化_阁::Init命令;
 pub use 命令核心_阁::{分发, 命令, 命令结果, 帮助命令};
 pub use 状态_阁::Status命令;
-pub use 端到端_阁::{跑流水线_mock_llm, MockLLM连接};
+pub use 真实_后端_选择_殿::{
+    后端模式, 构造端点配置, 端点配置, 解析后端模式, 读端点配置, 选择后端,
+};
+pub use 端到端_阁::{跑流水线_mock_llm, 跑流水线_真实_llm, MockLLM连接};
 pub use 运行_阁::{
     跑流水线, 跑流水线_反序, 跑流水线_循环打回, 跑流水线_跳层, Run命令
 };

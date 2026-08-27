@@ -21,12 +21,22 @@ pub use 命令元数据_殿::版本_查询_阁::版本标识_园::{版本, 项�
 
 pub use 命令调度_殿::{
     分发, 命令, 命令结果, 帮助命令, 跑流水线, 跑流水线_mock_llm, 跑流水线_反序, 跑流水线_循环打回,
-    跑流水线_跳层, Init命令, MockLLM连接, Run命令, Status命令,
+    跑流水线_真实_llm, 跑流水线_跳层, Init命令, MockLLM连接, Run命令, Status命令,
 };
 
 #[cfg(test)]
 mod 测试 {
     use super::*;
+    use std::sync::{Mutex, OnceLock};
+
+    /// env var 串行锁（mingling_caozuo_fu::模拟_llm::env_lock 是独立的，
+    /// 本测试 mod 内的入口层 e2e 测试也共享同一类 env，确保可串行）
+    fn env_lock() -> std::sync::MutexGuard<'static, ()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+    }
 
     #[test]
     fn 帮助命令零退出() {
@@ -133,6 +143,8 @@ mod 测试 {
 
     #[test]
     fn e2e_mock_llm_4分类调用() {
+        let _g = env_lock();
+        std::env::remove_var("LLM_BACKEND");
         let r = 跑流水线_mock_llm("e2e-test-001");
         assert_eq!(r.退出码, 0, "e2e 跑通：{}", r.输出);
         assert!(r.输出.contains("[e2e 启动]"));
@@ -146,6 +158,8 @@ mod 测试 {
 
     #[test]
     fn e2e_mock_llm_分发命令() {
+        let _g = env_lock();
+        std::env::remove_var("LLM_BACKEND");
         let r = 分发(&["e2e"]);
         assert_eq!(r.退出码, 0);
         assert!(r.输出.contains("[完成]"));
@@ -153,6 +167,8 @@ mod 测试 {
 
     #[test]
     fn e2e_mock_llm_任务标识传递() {
+        let _g = env_lock();
+        std::env::remove_var("LLM_BACKEND");
         let r = 跑流水线_mock_llm("测试传递");
         assert!(r.输出.contains("测试传递"));
     }
