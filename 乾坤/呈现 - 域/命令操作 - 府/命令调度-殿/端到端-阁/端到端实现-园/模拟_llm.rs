@@ -54,10 +54,10 @@ fn run_pipeline_with_backend(任务标识: &str, 模式: 后端模式) -> 命令
 
     let mut 日志 = format!("[e2e 启动] 任务：{} 后端={:?}\n", 任务标识, 模式);
 
-    // Round 9：根据后端模式选择池 + 连接（用枚举 + 模型连接 trait 兼容）
+    // 默认与真实均走真实 API（严禁 mock）；mock 仅显式 LLM_BACKEND=mock
     let 调用器: LLM调用器<连接抽象> = match 模式 {
-        后端模式::真实 => {
-            // 真实模式：尝试 moxing_fu::从环境变量构造()；失败 → 降级 mock
+        后端模式::真实 | 后端模式::默认 => {
+            // 真实模式：尝试 moxing_fu::从环境变量构造()；失败 → fail loud（严禁降级 mock）
             match moxing_fu::从环境变量构造() {
                 Some(池) => {
                     let 配置 = 读端点配置();
@@ -68,13 +68,15 @@ fn run_pipeline_with_backend(任务标识: &str, 模式: 后端模式) -> 命令
                     LLM调用器::新建(池, 连接抽象::HTTP(moxing_fu::HTTP连接::新建()))
                 }
                 None => {
-                    日志.push_str("[降级] 真实模式无可用 API key → fallback mock\n");
-                    let 池 = build_mock_pool();
-                    LLM调用器::新建(池, 连接抽象::Mock(MockLLM连接::新建()))
+                    // 严禁 mock：无 key 直接失败（frozen outcome），带上启动日志便于定位任务
+                    日志.push_str(
+                        "真实模式无可用 API key（LLM_API_KEY 未设置）——严禁降级 mock，请配置 .env\n",
+                    );
+                    return 命令结果::失败(3, 日志);
                 }
             }
         }
-        后端模式::Mock | 后端模式::默认 => {
+        后端模式::Mock => {
             let 池 = build_mock_pool();
             LLM调用器::新建(池, 连接抽象::Mock(MockLLM连接::新建()))
         }
@@ -364,6 +366,7 @@ mod 测试 {
     fn 测试_流水线_请求消息列表_含注入记忆() {
         let _g = env_lock();
         清空_env();
+        std::env::set_var("LLM_BACKEND", "mock");
         最近请求槽.with(|槽| 槽.borrow_mut().clear());
         let r = 跑流水线_mock_llm("记忆注入审计测试");
         assert_eq!(r.退出码, 0, "流水线应成功：{}", r.输出);
@@ -434,17 +437,15 @@ mod 测试 {
     }
 
     #[test]
-    fn 测试_默认走_mock() {
+    fn 测试_默认走真实_无key报错() {
         let _g = env_lock();
         清空_env();
-        let r = 跑流水线_mock_llm("default-mock");
-        assert_eq!(r.退出码, 0);
-        assert!(r.输出.contains("后端=Mock") || r.输出.contains("后端=默认"));
-        assert!(r.输出.contains("[LLM 道祖]"));
-        assert!(r.输出.contains("[LLM 大罗]"));
-        assert!(r.输出.contains("[完成]"));
+        let r = 跑流水线_mock_llm("default-real-no-key");
+        // 界主硬规则：默认走真实 API，无 key 必须 fail loud，严禁降级 mock
+        assert_eq!(r.退出码, 3, "默认应走真实且无 key 报错：{}", r.输出);
+        assert!(r.输出.contains("后端=默认") || r.输出.contains("后端=真实"));
+        assert!(r.输出.contains("严禁降级 mock"));
     }
-
     #[test]
     fn 测试_LLM_BACKEND_mock_显式走_mock() {
         let _g = env_lock();
@@ -457,19 +458,17 @@ mod 测试 {
     }
 
     #[test]
-    fn 测试_LLM_BACKEND_real_无_key_降级_mock() {
+    fn 测试_LLM_BACKEND_real_无_key_报错() {
         let _g = env_lock();
         清空_env();
         std::env::set_var("LLM_BACKEND", "real");
-        // LLM_API_KEY 未设置 → 从环境变量构造() 返回 None → 降级 mock
+        // LLM_API_KEY 未设置 → fail loud（严禁降级 mock）
         let r = 跑流水线_mock_llm("env-real-no-key");
-        assert_eq!(r.退出码, 0);
+        assert_eq!(r.退出码, 3, "真实模式无 key 应报错：{}", r.输出);
         assert!(r.输出.contains("后端=真实"));
-        assert!(r.输出.contains("[降级]"));
-        assert!(r.输出.contains("fallback mock"));
+        assert!(r.输出.contains("严禁降级 mock"));
         std::env::remove_var("LLM_BACKEND");
     }
-
     #[test]
     fn 测试_LLM_BACKEND_real_有_key_走真实() {
         let _g = env_lock();
@@ -502,16 +501,15 @@ mod 测试 {
     }
 
     #[test]
-    fn 测试_跑流水线_真实_llm_显式_无_key_降级() {
+    fn 测试_跑流水线_真实_llm_显式_无_key_报错() {
         let _g = env_lock();
         清空_env();
-        // 显式走真实模式 + 无 key → 应降级
+        // 显式走真实模式 + 无 key → 必须 fail loud（严禁降级 mock）
         let r = 跑流水线_真实_llm("explicit-real-no-key");
-        assert_eq!(r.退出码, 0);
+        assert_eq!(r.退出码, 3, "显式真实无 key 应报错：{}", r.输出);
         assert!(r.输出.contains("后端=真实"));
-        assert!(r.输出.contains("[降级]"));
+        assert!(r.输出.contains("严禁降级 mock"));
     }
-
     #[test]
     fn 测试_跑流水线_真实_llm_显式_有_key() {
         let _g = env_lock();

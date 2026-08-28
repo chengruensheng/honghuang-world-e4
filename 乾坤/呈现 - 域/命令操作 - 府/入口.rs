@@ -156,7 +156,7 @@ mod 测试 {
     #[test]
     fn e2e_mock_llm_4分类调用() {
         let _g = env_lock();
-        std::env::remove_var("LLM_BACKEND");
+        std::env::set_var("LLM_BACKEND", "mock");
         let r = 跑流水线_mock_llm("e2e-test-001");
         assert_eq!(r.退出码, 0, "e2e 跑通：{}", r.输出);
         assert!(r.输出.contains("[e2e 启动]"));
@@ -171,7 +171,7 @@ mod 测试 {
     #[test]
     fn e2e_mock_llm_分发命令() {
         let _g = env_lock();
-        std::env::remove_var("LLM_BACKEND");
+        std::env::set_var("LLM_BACKEND", "mock");
         let r = 分发(&["e2e"]);
         assert_eq!(r.退出码, 0);
         assert!(r.输出.contains("[完成]"));
@@ -180,7 +180,7 @@ mod 测试 {
     #[test]
     fn e2e_mock_llm_任务标识传递() {
         let _g = env_lock();
-        std::env::remove_var("LLM_BACKEND");
+        std::env::set_var("LLM_BACKEND", "mock");
         let r = 跑流水线_mock_llm("测试传递");
         assert!(r.输出.contains("测试传递"));
     }

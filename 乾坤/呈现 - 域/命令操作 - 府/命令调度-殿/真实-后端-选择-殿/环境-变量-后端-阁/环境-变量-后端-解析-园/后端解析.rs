@@ -10,7 +10,7 @@ use std::sync::{Mutex, OnceLock};
 ///
 /// - `真实`：使用 moxing_fu::从环境变量构造() 构造的真实池 + HTTP连接
 /// - `Mock`：使用 mingling_caozuo_fu 的 MockLLM连接
-/// - `默认`：未设置 LLM_BACKEND 或解析失败 → Mock（向后兼容）
+/// - `默认`：未设置 LLM_BACKEND 或解析失败 → 真实（严禁 mock，界主硬规则）
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum 后端模式 {
     真实,
@@ -30,7 +30,7 @@ fn env_lock() -> std::sync::MutexGuard<'static, ()> {
 ///
 /// - "real" → 后端模式::真实
 /// - "mock" → 后端模式::Mock
-/// - "" / 未设置 / 其他拼写 → 后端模式::默认（实际走 Mock）
+/// - "" / 未设置 / 其他拼写 → 后端模式::默认（实际走真实，严禁 mock）
 pub fn 解析后端模式() -> 后端模式 {
     use std::env;
     match env::var("LLM_BACKEND") {
