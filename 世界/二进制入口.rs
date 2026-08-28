@@ -23,7 +23,9 @@ fn main() {
 
 /// 生产分发：run 走真实后端，--health 走就绪检测，其余透传命令操作-府
 fn 分发生产(参数: &[&str]) -> mingling_caozuo_fu::命令结果 {
-    use mingling_caozuo_fu::{分发, 命令结果, 跑流水线_mock_llm};
+    use mingling_caozuo_fu::{
+        写入任务记忆, 分发, 命令结果, 工具永驻摘要, 跑流水线_mock_llm, 默认记忆库路径,
+    };
 
     if 参数.is_empty() {
         return 分发(参数);
@@ -50,12 +52,28 @@ fn 分发生产(参数: &[&str]) -> mingling_caozuo_fu::命令结果 {
             // 真实生产：run --task=<id> 走真实 LLM 后端（无 key 自动降级 mock）
             let 任务 = 参数.iter().find_map(|a| a.strip_prefix("--task="));
             match 任务 {
-                Some(t) => 跑流水线_mock_llm(t),
-                None => 命令结果::失败(
-                    2,
-                    "用法：run --task=<id>（真实 LLM / mock 自动选择）
-",
-                ),
+                Some(t) => {
+                    let mut 结果 = 跑流水线_mock_llm(t);
+                    // 任务后写程序/实施记忆 + 刷新永驻摘要（真实生产留痕可审计）
+                    if 结果.退出码 == 0 {
+                        if let Err(错) =
+                            写入任务记忆(默认记忆库路径, &format!("流水线执行完成：{}", t), t)
+                        {
+                            结果.输出.push_str(&format!("[记忆写入失败] {}\n", 错));
+                        }
+                        let 摘要 = 工具永驻摘要(默认记忆库路径);
+                        let 有内容 = 摘要.iter().filter(|s| !s.ends_with("] ")).count();
+                        结果.输出.push_str(&format!(
+                            "任务后记忆闭环：永驻摘要 {} 行，其中 {} 行有内容\n",
+                            摘要.len(),
+                            有内容
+                        ));
+                    }
+                    结果
+                }
+                None => {
+                    命令结果::失败(2, "用法：run --task=<id>（真实 LLM / mock 自动选择）\n")
+                }
             }
         }
         _ => 分发(参数),
