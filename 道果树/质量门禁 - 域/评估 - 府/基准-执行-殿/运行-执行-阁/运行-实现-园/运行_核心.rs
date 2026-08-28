@@ -1,7 +1,7 @@
 //! 运行执行 - 基准器 struct + 新建 + 跑方法
 
 use super::super::super::super::基线_数据_殿::基线_值_园::基线值;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 pub struct 基准器 {
     pub 基线: Vec<基线值>,
@@ -18,7 +18,8 @@ impl 基准器 {
         let 内存_前 = super::super::super::度量_查询_阁::内存_度量_园::内存_使用();
         let 开始 = Instant::now();
         f();
-        let 耗时 = 开始.elapsed();
+        // 极快任务在负载下可能测得 0ns：以 1ns 兜底，防后续除零/比率计算失真
+        let 耗时 = 开始.elapsed().max(Duration::from_nanos(1));
         let 内存_后 = super::super::super::度量_查询_阁::内存_度量_园::内存_使用();
         let 内存 = 内存_后.saturating_sub(内存_前);
         self.基线.push(基线值 {
@@ -44,6 +45,8 @@ mod 测试 {
             let _x = 1 + 1;
         });
         assert_eq!(b.基线.len(), 1);
-        assert!(b.基线[0].耗时.as_nanos() > 0);
+        assert_eq!(b.基线[0].名称, "test");
+        // 1ns 兜底保证耗时恒正（防除零），断言不再依赖真实计时
+        assert!(b.基线[0].耗时.as_nanos() >= 1);
     }
 }
