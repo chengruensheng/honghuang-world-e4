@@ -63,7 +63,8 @@ impl 命令 for 记忆命令 {
     fn 执行(&self, 参数: &[&str]) -> 命令结果 {
         use crate::记忆读取_殿::{
             世界快照, 事件流_全部, 事件流_记录, 事件流_读取, 任务收尾, 地道精炼, 完成度自评,
-            播种格位36, 查会话, 查全部记忆, 格位统计, 终点归档, 读取_三档投影, 默认记忆库路径,
+            播种格位36, 查会话, 查全部记忆, 格位统计, 终点归档, 记会话, 读取_三档投影,
+            默认记忆库路径,
         };
         let 子 = 参数.first().copied().unwrap_or("");
         let 库 = if 参数.len() >= 2 && !参数[1].is_empty() {
@@ -142,6 +143,39 @@ impl 命令 for 记忆命令 {
                     默认记忆库路径
                 };
                 match 子 {
+                    "记" => {
+                        let 任务 = 参数.get(2).copied().unwrap_or("");
+                        let 轨迹文本 = 参数.get(3).copied().unwrap_or("");
+                        if 任务.is_empty() || 轨迹文本.is_empty() {
+                            return 命令结果::失败(
+                                1,
+                                "用法：记忆 会话 记 <任务标识> <轨迹文本（全角；分隔多行）> [库路径]",
+                            );
+                        }
+                        let 库 = if 参数.len() >= 5 && !参数[4].is_empty() {
+                            参数[4]
+                        } else {
+                            默认记忆库路径
+                        };
+                        let 轨迹: Vec<String> = 轨迹文本
+                            .split('；')
+                            .map(|s| s.trim().to_string())
+                            .filter(|s| !s.is_empty())
+                            .collect();
+                        if 轨迹.is_empty() {
+                            return 命令结果::失败(1, "轨迹文本为空（用全角；分隔多行）");
+                        }
+                        let ids = 记会话(库, 任务, &轨迹);
+                        if ids.is_empty() {
+                            return 命令结果::失败(1, format!("记会话失败：{}", 任务));
+                        }
+                        命令结果::成功(format!(
+                            "== 会话记录 ==\n任务：{}\n记录 {} 行\n库：{}",
+                            任务,
+                            ids.len(),
+                            库
+                        ))
+                    }
                     "查" => {
                         if 任务.is_empty() {
                             return 命令结果::失败(
