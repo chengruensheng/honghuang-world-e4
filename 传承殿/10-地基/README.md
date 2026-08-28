@@ -95,4 +95,4 @@
 ---
 
 *10-地基 · 2026-08-26 重建 · decided_by: 界主 · implemented_by: MiniMax-M3*
-*implements: 道·地基（cargo workspace + 12 crate 空骨架 + 一键全验 10 项）*
+*implements: 道（cargo workspace + 12 crate 空骨架 + 一键全验 10 项）*

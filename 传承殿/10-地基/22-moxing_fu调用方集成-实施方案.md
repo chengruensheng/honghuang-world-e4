@@ -99,5 +99,5 @@ logicprobe 14 检查结果：
 ---
 
 *22-moxing_fu调用方集成 · 2026-08-27 · 入稿 · decided_by: 界主*
-*implements: 应·moxing_fu 调用方集成（Round 9）*
+*implements: 应（Round 9）*
 *falsifiable: 真实-后端-选择-殿 2 阁 + 后端选择函数 + 单测覆盖 4 场景 + 12/12 门禁全绿*

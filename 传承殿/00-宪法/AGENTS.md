@@ -52,7 +52,7 @@
 ---
 
 *传承殿 · 2026-08-26 · decided_by: 界主*
-*implements: 元·元（治理的治理）*
+*implements: 元（治理的治理）*
 *falsifiable: 上线 3 个月，17 条铁律的违反率 < 5%*
 ## 五、AI 助手执行流程（Round 11+ 起强制 · decision anchor: 260827-AI助手自给自足）
 

@@ -140,4 +140,4 @@ flowchart LR
 ---
 
 *传承殿 · 2026-08-26 · decided_by: 界主*
-*implements: 术·Cargo workspace 依赖图*
+*implements: 术

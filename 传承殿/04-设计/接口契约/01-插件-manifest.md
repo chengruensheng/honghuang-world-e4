@@ -88,5 +88,5 @@ implements = "法·可演化（局部替换不影响整体）"
 ---
 
 *传承殿 · 2026-08-26 · decided_by: 界主*
-*implements: 法·可演化（插件契约 + manifest 强制）*
+*implements: 法（插件契约 + manifest 强制）*
 *falsifiable: 上线 3 个月，插件替换不影响其他插件的成功率 > 95%*
