@@ -84,15 +84,25 @@ fn run_pipeline_with_backend(任务标识: &str, 模式: 后端模式) -> 命令
     };
     let _ = 分类_机械判定(&任务_obj, 角色分类::道祖级);
 
+    // 模型可见⟺已记录：流水线组装 LLM 请求前，注入持久库相关记忆（可审计）
+    let 记忆上下文 = match 组装记忆上下文(任务标识) {
+        Ok(文) => 文,
+        Err(错) => return 命令结果::失败(4, 错),
+    };
+
     let 池顺序 = ["道祖", "圣人", "准圣", "大罗"];
     for 池名 in 池顺序.iter() {
-        let req = 请求::新建(
-            "",
-            vec![
-                moxing_fu::消息::系统(format!("你是 {} 角色卡", 池名)),
-                moxing_fu::消息::用户(format!("任务：{}", 任务标识)),
-            ],
-        );
+        let mut 消息列表 = vec![
+            moxing_fu::消息::系统(format!("你是 {} 角色卡", 池名)),
+            moxing_fu::消息::用户(format!("任务：{}", 任务标识)),
+        ];
+        if !记忆上下文.is_empty() {
+            消息列表.insert(
+                0,
+                moxing_fu::消息::系统(format!("相关记忆（36 格位）：\n{}", 记忆上下文)),
+            );
+        }
+        let req = 请求::新建("", 消息列表);
         match 调用器.调用(池名, &req) {
             Ok(响应) => 日志.push_str(&format!("[LLM {}] {}\n", 池名, 响应.内容)),
             Err(e) => 日志.push_str(&format!("[LLM {} 错误] {}\n", 池名, e)),
@@ -101,6 +111,40 @@ fn run_pipeline_with_backend(任务标识: &str, 模式: 后端模式) -> 命令
 
     日志.push_str("[完成] e2e 任务全链路通过（追问 + 4 分类 LLM）\n");
     命令结果::成功(日志)
+}
+
+/// 组装记忆上下文：读持久库相关记忆 + 可审计断言（模型可见⟺已记录）
+///
+/// 机制：任务进来 → 读任务记忆（持久 SQLite 库）→ 断言每条注入记忆可被持久库重建
+/// → 返回换行拼接的记忆文本。
+/// falsifiable：临时库写已知条目后，组装记忆上下文_按路径 返回含该条目文本；
+///             反向断言失败路径（库中不存在的内容）返回 Err。
+fn 组装记忆上下文(任务标识: &str) -> Result<String, String> {
+    组装记忆上下文_按路径(crate::默认记忆库路径, 任务标识)
+}
+
+/// 按路径组装记忆上下文（可测试变体，避免污染默认库）
+fn 组装记忆上下文_按路径(
+    记忆库路径: &str, 任务标识: &str
+) -> Result<String, String> {
+    let 记忆 = crate::读任务记忆(记忆库路径, 任务标识);
+    let 全部 = crate::查全部记忆(记忆库路径);
+    断言可重建(&记忆, &全部)?;
+    Ok(记忆.join("\n"))
+}
+
+/// 反向可审计断言：凡注入 LLM 的记忆必可由持久库重建（可见⟺已记录）
+///
+/// 读任务记忆 返回 "[范畴] 内容"，查全部记忆 返回 "[范畴·阶段] 内容"；
+/// 按 "内容" 部分做子串匹配（不同范畴/阶段的同内容条目视为可重建）。
+fn 断言可重建(注入: &[String], 全部: &[String]) -> Result<(), String> {
+    for 条 in 注入 {
+        let 内容 = 条.split_once("] ").map(|(_, 内)| 内).unwrap_or(条.as_str());
+        if !全部.iter().any(|全| 全.contains(内容)) {
+            return Err(format!("注入记忆不可审计（持久库不可重建）：{}", 条));
+        }
+    }
+    Ok(())
 }
 
 /// 构造 Mock 4 分类 LLM 池
@@ -158,6 +202,35 @@ mod 测试 {
         std::env::remove_var("LLM_MODEL_SHENGREN");
         std::env::remove_var("LLM_MODEL_ZHUNSHENG");
         std::env::remove_var("LLM_MODEL_DALUO");
+    }
+
+    #[test]
+    fn 断言可重建_正向通过() {
+        let 注入 = vec!["[程序] 36 格位闭环 API".to_string()];
+        let 全部 = vec!["[程序·实施] 36 格位闭环 API".to_string()];
+        assert!(断言可重建(&注入, &全部).is_ok());
+    }
+
+    #[test]
+    fn 断言可重建_反向失败() {
+        let 注入 = vec!["[程序] 库中不存在的记忆".to_string()];
+        let 全部 = vec!["[程序·实施] 36 格位闭环 API".to_string()];
+        match 断言可重建(&注入, &全部) {
+            Err(错) => assert!(错.contains("不可审计"), "错误信息应含「不可审计」：{}", 错),
+            Ok(_) => panic!("库中不存在的内容必须判定不可审计"),
+        }
+    }
+
+    #[test]
+    fn 组装记忆上下文_已知条目可重建() {
+        let 路径 = std::env::temp_dir().join(format!("洪荒记忆测试_{}.sq3", std::process::id()));
+        let 路径_str = 路径.to_str().unwrap();
+        // 空库自动种子落盘（含 程序/实施 "36 格位闭环 API"）
+        let _ = crate::读取任务相关记忆_持久(路径_str, "实现 Cargo 测试");
+        let 结果 = 组装记忆上下文_按路径(路径_str, "实现 Cargo 测试");
+        let 文本 = 结果.expect("注入记忆必须可被持久库重建");
+        assert!(文本.contains("程序"), "应命中程序范畴记忆：{}", 文本);
+        let _ = std::fs::remove_file(&路径);
     }
 
     #[test]
