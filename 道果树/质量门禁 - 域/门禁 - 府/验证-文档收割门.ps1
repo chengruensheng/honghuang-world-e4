@@ -13,12 +13,12 @@ Write-Host "=== 15/15 文档收割门（防 AI 文档污染） ==="
 $违规 = @()
 
 # ---- 检测1：git 对比断崖缩水 ----
-$改动 = git status --porcelain -- "传承殿/**/*.md" 2>&1
+$改动 = git -c core.quotepath=false status --porcelain -- "传承殿/**/*.md" 2>&1
 foreach ($行 in $改动) {
     if ($行 -match '^\s*M\s+(.+)$') {
         $文件 = ($Matches[1] -replace '^"|"$','').Trim()
         if (-not $文件) { continue }
-        $stat = git diff --numstat -- "$文件" 2>&1
+        $stat = git -c core.quotepath=false diff --numstat -- "$文件" 2>&1
         foreach ($s in $stat) {
             if ($s -match '^(\d+)\s+(\d+)\s') {
                 $增 = [int]$Matches[1]

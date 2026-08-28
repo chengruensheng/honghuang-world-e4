@@ -1,12 +1,13 @@
 //! SQLite 阁 - SQLite 经档持久化后端（实现 trait 记忆存储）
 //!
-//! v3 阶段 11：SQLite 经档持久化
 //! 决策锚：260826-2240 传承殿启动 § 记忆模型
 //! 关联文档：02-概念/记忆/03-记忆.md + 04-设计/数据模型/01-记忆.md
 
 // 跨殿引用：类型定义在类型定义殿，trait 在存储操作殿（六层返工后改用 crate:: 路径）
 use crate::记忆存储_殿::记忆存储;
-use crate::记忆类型_殿::{来源, 档位, 范畴, 记忆ID, 记忆条目, 错误, 阶段};
+use crate::记忆类型_殿::{
+    总纲, 所有本质, 本质, 来源, 档位, 记忆ID, 记忆条目, 错误, 阶段
+};
 
 // ============================================================================
 // SQLite 存储后端
@@ -34,7 +35,8 @@ impl SQLite存储 {
         conn.execute(
             "CREATE TABLE IF NOT EXISTS 记忆条目 (
                 id INTEGER PRIMARY KEY,
-                范畴 TEXT NOT NULL,
+                总纲 TEXT NOT NULL,
+                本质 TEXT NOT NULL,
                 阶段 TEXT NOT NULL,
                 档位 TEXT NOT NULL,
                 来源 TEXT NOT NULL,
@@ -67,36 +69,28 @@ impl SQLite存储 {
     }
 }
 
-fn 范畴_到串(c: 范畴) -> &'static str {
-    match c {
-        范畴::目标 => "目标",
-        范畴::规则 => "规则",
-        范畴::自我 => "自我",
-        范畴::程序 => "程序",
-        范畴::世界 => "世界",
-        范畴::经历 => "经历",
-    }
+fn 总纲_到串(c: 总纲) -> &'static str {
+    c.名称()
 }
-fn 范畴_从串(s: &str) -> Option<范畴> {
+fn 总纲_从串(s: &str) -> Option<总纲> {
     match s {
-        "目标" => Some(范畴::目标),
-        "规则" => Some(范畴::规则),
-        "自我" => Some(范畴::自我),
-        "程序" => Some(范畴::程序),
-        "世界" => Some(范畴::世界),
-        "经历" => Some(范畴::经历),
+        "内部" => Some(总纲::内部),
+        "外在" => Some(总纲::外在),
+        "规则" => Some(总纲::规则),
+        "执行" => Some(总纲::执行),
+        "目标" => Some(总纲::目标),
+        "经历" => Some(总纲::经历),
         _ => None,
     }
 }
+fn 本质_到串(c: 本质) -> &'static str {
+    c.名称()
+}
+fn 本质_从串(s: &str) -> Option<本质> {
+    所有本质.iter().copied().find(|b| b.名称() == s)
+}
 fn 阶段_到串(p: 阶段) -> &'static str {
-    match p {
-        阶段::提案 => "提案",
-        阶段::审阅 => "审阅",
-        阶段::拍板 => "拍板",
-        阶段::实施 => "实施",
-        阶段::验收 => "验收",
-        阶段::归档 => "归档",
-    }
+    p.名称()
 }
 fn 阶段_从串(s: &str) -> Option<阶段> {
     match s {
@@ -110,11 +104,7 @@ fn 阶段_从串(s: &str) -> Option<阶段> {
     }
 }
 fn 档位_到串(d: 档位) -> &'static str {
-    match d {
-        档位::经档 => "经档",
-        档位::权档 => "权档",
-        档位::行档 => "行档",
-    }
+    d.名称()
 }
 fn 档位_从串(s: &str) -> Option<档位> {
     match s {
@@ -125,11 +115,7 @@ fn 档位_从串(s: &str) -> Option<档位> {
     }
 }
 fn 来源_到串(y: 来源) -> &'static str {
-    match y {
-        来源::代码 => "代码",
-        来源::LLM => "LLM",
-        来源::人类 => "人类",
-    }
+    y.名称()
 }
 fn 来源_从串(s: &str) -> Option<来源> {
     match s {
@@ -143,7 +129,7 @@ fn 来源_从串(s: &str) -> Option<来源> {
 impl 记忆存储 for SQLite存储 {
     fn 读(&self, id: 记忆ID) -> Option<记忆条目> {
         let mut stmt = self.db.prepare(
-            "SELECT 范畴, 阶段, 档位, 来源, 内容, 摘要, decided_by, implements, hash, 软放弃 FROM 记忆条目 WHERE id = ?1"
+            "SELECT 总纲, 本质, 阶段, 档位, 来源, 内容, 摘要, decided_by, implements, hash, 软放弃 FROM 记忆条目 WHERE id = ?1"
         ).ok()?;
         let row = stmt
             .query_row(rusqlite::params![id.0 as i64], |row| {
@@ -156,23 +142,25 @@ impl 记忆存储 for SQLite存储 {
                     row.get::<_, String>(5)?,
                     row.get::<_, String>(6)?,
                     row.get::<_, String>(7)?,
-                    row.get::<_, i64>(8)?,
+                    row.get::<_, String>(8)?,
                     row.get::<_, i64>(9)?,
+                    row.get::<_, i64>(10)?,
                 ))
             })
             .ok()?;
         let 条目 = 记忆条目::从持久化(
             id.0,
-            范畴_从串(&row.0)?,
-            阶段_从串(&row.1)?,
-            档位_从串(&row.2)?,
-            来源_从串(&row.3)?,
-            row.4,
+            总纲_从串(&row.0)?,
+            本质_从串(&row.1)?,
+            阶段_从串(&row.2)?,
+            档位_从串(&row.3)?,
+            来源_从串(&row.4)?,
             row.5,
             row.6,
             row.7,
-            row.8 as u64,
-            row.9 != 0,
+            row.8,
+            row.9 as u64,
+            row.10 != 0,
         );
         // 防篡改：hash 与字段不一致说明数据被篡改或损坏，拒绝返回
         if !条目.校验哈希() {
@@ -183,10 +171,11 @@ impl 记忆存储 for SQLite存储 {
 
     fn 写(&mut self, 条目: 记忆条目) -> Result<(), 错误> {
         self.db.execute(
-            "INSERT OR REPLACE INTO 记忆条目 (id, 范畴, 阶段, 档位, 来源, 内容, 摘要, decided_by, implements, hash, 软放弃) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            "INSERT OR REPLACE INTO 记忆条目 (id, 总纲, 本质, 阶段, 档位, 来源, 内容, 摘要, decided_by, implements, hash, 软放弃) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             rusqlite::params![
                 条目.id.0 as i64,
-                范畴_到串(条目.范畴),
+                总纲_到串(条目.总纲),
+                本质_到串(条目.本质),
                 阶段_到串(条目.阶段),
                 档位_到串(条目.档位),
                 来源_到串(条目.来源),
@@ -213,7 +202,7 @@ impl 记忆存储 for SQLite存储 {
 
     fn 查_全部(&self) -> Vec<记忆条目> {
         let mut stmt = match self.db.prepare(
-            "SELECT id, 范畴, 阶段, 档位, 来源, 内容, 摘要, decided_by, implements, hash, 软放弃 FROM 记忆条目",
+            "SELECT id, 总纲, 本质, 阶段, 档位, 来源, 内容, 摘要, decided_by, implements, hash, 软放弃 FROM 记忆条目",
         ) {
             Ok(s) => s,
             Err(_) => return Vec::new(),
@@ -229,8 +218,9 @@ impl 记忆存储 for SQLite存储 {
                 row.get::<_, String>(6)?,
                 row.get::<_, String>(7)?,
                 row.get::<_, String>(8)?,
-                row.get::<_, i64>(9)?,
+                row.get::<_, String>(9)?,
                 row.get::<_, i64>(10)?,
+                row.get::<_, i64>(11)?,
             ))
         }) {
             Ok(r) => r,
@@ -238,10 +228,11 @@ impl 记忆存储 for SQLite存储 {
         };
         rows.filter_map(|r| {
             r.ok().and_then(
-                |(id, cat, ph, lvl, src, content, summary, dec, imp, hash, 软)| {
+                |(id, gang, ben, ph, lvl, src, content, summary, dec, imp, hash, 软)| {
                     let 条目 = 记忆条目::从持久化(
                         id as u64,
-                        范畴_从串(&cat)?,
+                        总纲_从串(&gang)?,
+                        本质_从串(&ben)?,
                         阶段_从串(&ph)?,
                         档位_从串(&lvl)?,
                         来源_从串(&src)?,
@@ -311,7 +302,8 @@ mod 测试_sqlite {
     fn 测试条目(id: u64) -> 记忆条目 {
         记忆条目::新建(
             id,
-            范畴::目标,
+            总纲::目标,
+            本质::未来,
             阶段::实施,
             档位::行档,
             来源::代码,
@@ -329,7 +321,8 @@ mod 测试_sqlite {
         let 读 = s.读(记忆ID(1)).unwrap();
         assert_eq!(读.内容, "test 内容");
         assert_eq!(读.decided_by, "界主");
-        assert_eq!(读.范畴, 范畴::目标);
+        assert_eq!(读.总纲, 总纲::目标);
+        assert_eq!(读.本质, 本质::未来);
     }
 
     #[test]
@@ -356,10 +349,10 @@ mod 测试_sqlite {
         let _ = std::fs::remove_file(&临时路径);
         {
             let mut s = SQLite存储::文件新建(临时路径.to_str().unwrap()).unwrap();
-            // 构造时即带最终内容（构造后改内容会失效 hash，属篡改）
             let 条目 = 记忆条目::新建(
                 3,
-                范畴::目标,
+                总纲::目标,
+                本质::未来,
                 阶段::实施,
                 档位::行档,
                 来源::代码,
@@ -380,22 +373,24 @@ mod 测试_sqlite {
     }
 
     #[test]
-    fn sqlite_4维正交_保留() {
+    fn sqlite_四维正交_保留() {
         let mut s = SQLite存储::内存新建().unwrap();
         let 条目 = 记忆条目::新建(
             4,
-            范畴::经历,
+            总纲::经历,
+            本质::归档,
             阶段::归档,
             档位::经档,
             来源::人类,
-            "4 维正交测试",
-            "经历/归档/经档/人类",
+            "四维正交测试",
+            "经历/归档/归档/经档/人类",
             "界主",
             "工程-DSH",
         );
         s.写(条目).unwrap();
         let 读 = s.读(记忆ID(4)).unwrap();
-        assert_eq!(读.范畴, 范畴::经历);
+        assert_eq!(读.总纲, 总纲::经历);
+        assert_eq!(读.本质, 本质::归档);
         assert_eq!(读.阶段, 阶段::归档);
         assert_eq!(读.档位, 档位::经档);
         assert_eq!(读.来源, 来源::人类);
@@ -409,7 +404,7 @@ mod 测试_sqlite {
         {
             let mut s = SQLite存储::文件新建(临时路径.to_str().unwrap()).unwrap();
             let mut 条目 = 测试条目(5);
-            条目.软放弃(); // 标记软放弃
+            条目.软放弃();
             s.写(条目).unwrap();
         }
         {
@@ -423,10 +418,8 @@ mod 测试_sqlite {
 
     #[test]
     fn sqlite_hash_防篡改() {
-        // 篡改内容后 hash 校验应失败，读回返回 None
         let mut s = SQLite存储::内存新建().unwrap();
         s.写(测试条目(6)).unwrap();
-        // 直接改数据库内容（模拟篡改）
         s.db.execute("UPDATE 记忆条目 SET 内容 = '被篡改' WHERE id = 6", [])
             .unwrap();
         assert!(s.读(记忆ID(6)).is_none(), "篡改后读回应被拒绝");
@@ -434,13 +427,13 @@ mod 测试_sqlite {
 
     #[test]
     fn sqlite_从持久化_保留hash与软放弃() {
-        // 从持久化构造器应原样保留 hash 与 软放弃，不重算
         let mut 条目 = 测试条目(7);
         条目.软放弃();
         let 原hash = 条目.hash;
         let 持久化 = 记忆条目::从持久化(
             条目.id.0,
-            条目.范畴,
+            条目.总纲,
+            条目.本质,
             条目.阶段,
             条目.档位,
             条目.来源,

@@ -71,8 +71,8 @@ mod 测试 {
     #[test]
     fn 测试_复用经验_36格位写入() {
         let r = 复用经验::新建("test", "decision", "reuse", "test-phase");
-        assert_eq!(r.写入格位.范畴, "经历");
-        assert_eq!(r.写入格位.阶段, "归档");
+        assert_eq!(r.写入格位.总纲, "经历");
+        assert_eq!(r.写入格位.本质, "归档");
         assert!(r.写入格位.路径.contains("复用经验"));
     }
 

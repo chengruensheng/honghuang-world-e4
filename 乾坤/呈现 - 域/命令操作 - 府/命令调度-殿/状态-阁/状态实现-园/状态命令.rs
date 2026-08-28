@@ -82,7 +82,11 @@ mod 测试 {
     #[test]
     fn 府数_读根Cargo_toml为33() {
         let 根 = Path::new("E:\\洪荒 - 世界");
-        assert_eq!(府数(根), 33, "工作空间府数应为 33（根 Cargo.toml members 路径行数）");
+        assert_eq!(
+            府数(根),
+            33,
+            "工作空间府数应为 33（根 Cargo.toml members 路径行数）"
+        );
     }
 
     /// 状态命令实时快照三节齐全 + 退出码 0。
@@ -91,7 +95,11 @@ mod 测试 {
         let r = Status命令.执行(&[]);
         assert_eq!(r.退出码, 0);
         assert!(r.输出.contains("最近提交"), "应含最近提交：{}", r.输出);
-        assert!(r.输出.contains("未提交/未跟踪"), "应含未提交统计：{}", r.输出);
+        assert!(
+            r.输出.contains("未提交/未跟踪"),
+            "应含未提交统计：{}",
+            r.输出
+        );
         assert!(r.输出.contains("工作空间"), "应含工作空间府数：{}", r.输出);
     }
 }

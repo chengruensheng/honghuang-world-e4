@@ -16,22 +16,22 @@ pub struct 复用经验 {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct 写入格位信息 {
-    pub 范畴: String,
-    pub 阶段: String,
+    pub 总纲: String,
+    pub 本质: String,
     pub 路径: String,
 }
 
 impl 复用经验 {
     pub fn 新建(场景: &str, 决策: &str, 复用点: &str, 关联阶段: &str) -> Self {
-        // 默认写经历/归档 格位（最贴切"复用经验"语义）
+        // 默认写 经历×归档 格位（最贴切"复用经验"语义）
         Self {
             场景: 场景.to_string(),
             决策: 决策.to_string(),
             复用点: 复用点.to_string(),
             关联阶段: 关联阶段.to_string(),
             写入格位: 写入格位信息 {
-                范畴: "经历".to_string(),
-                阶段: "归档".to_string(),
+                总纲: "经历".to_string(),
+                本质: "归档".to_string(),
                 路径: "经历/归档/复用经验".to_string(),
             },
         }
@@ -58,7 +58,7 @@ pub fn v3复用经验() -> Vec<复用经验> {
             "阶段 2",
         ),
         复用经验::新建(
-            "36 格位 + 3 维正交 + MUST/MIXED/OPTIONAL 加载档位",
+            "36 格位（6 总纲 × 6 本质）+ MUST/MIXED/OPTIONAL 加载档位",
             "jiyi_chengzai_fu struct + 提问引擎/拼全息图函数",
             "新分类：复用 enum + 添加新格位路径到拼全息图",
             "阶段 3",
