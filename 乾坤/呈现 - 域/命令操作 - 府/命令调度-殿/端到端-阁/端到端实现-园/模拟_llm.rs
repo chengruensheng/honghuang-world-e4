@@ -84,24 +84,20 @@ fn run_pipeline_with_backend(任务标识: &str, 模式: 后端模式) -> 命令
     };
     let _ = 分类_机械判定(&任务_obj, 角色分类::道祖级);
 
-    // 模型可见⟺已记录：流水线组装 LLM 请求前，注入持久库相关记忆（可审计）
-    let 记忆上下文 = match 组装记忆上下文(任务标识) {
-        Ok(文) => 文,
+    // 模型可见⟺已记录：流水线组装 LLM 请求前，读持久库相关记忆 + 反向断言（可审计）
+    let 记忆 = match 组装记忆上下文(任务标识) {
+        Ok(记) => 记,
         Err(错) => return 命令结果::失败(4, 错),
     };
+    let 记忆文本 = 记忆.join("\n");
 
     let 池顺序 = ["道祖", "圣人", "准圣", "大罗"];
     let mut llm失败数 = 0;
     for 池名 in 池顺序.iter() {
-        let mut 消息列表 = vec![
-            moxing_fu::消息::系统(format!("你是 {} 角色卡", 池名)),
-            moxing_fu::消息::用户(format!("任务：{}", 任务标识)),
-        ];
-        if !记忆上下文.is_empty() {
-            消息列表.insert(
-                0,
-                moxing_fu::消息::系统(format!("相关记忆（36 格位）：\n{}", 记忆上下文)),
-            );
+        let 消息列表 = 组装消息列表(池名, 任务标识, &记忆文本);
+        // 正向断言（拦截点：调用器.调用 之前）：读到的每条记忆必须出现在消息列表
+        if let Err(错) = 断言注入到位(&记忆, &消息列表) {
+            return 命令结果::失败(4, 错);
         }
         let req = 请求::新建("", 消息列表);
         match 调用器.调用(池名, &req) {
@@ -125,24 +121,51 @@ fn run_pipeline_with_backend(任务标识: &str, 模式: 后端模式) -> 命令
     }
 }
 
-/// 组装记忆上下文：读持久库相关记忆 + 可审计断言（模型可见⟺已记录）
+/// 组装记忆上下文：读持久库相关记忆 + 反向断言（模型可见⟺已记录）
 ///
-/// 机制：任务进来 → 读任务记忆（持久 SQLite 库）→ 断言每条注入记忆可被持久库重建
-/// → 返回换行拼接的记忆文本。
+/// 机制：任务进来 → 读任务记忆（持久 SQLite 库）→ 反向断言每条注入记忆可被持久库重建
+/// → 返回记忆条目列表（调用方拼接注入消息列表）。
 /// falsifiable：临时库写已知条目后，组装记忆上下文_按路径 返回含该条目文本；
 ///             反向断言失败路径（库中不存在的内容）返回 Err。
-fn 组装记忆上下文(任务标识: &str) -> Result<String, String> {
+fn 组装记忆上下文(任务标识: &str) -> Result<Vec<String>, String> {
     组装记忆上下文_按路径(crate::默认记忆库路径, 任务标识)
 }
 
 /// 按路径组装记忆上下文（可测试变体，避免污染默认库）
 fn 组装记忆上下文_按路径(
-    记忆库路径: &str, 任务标识: &str
-) -> Result<String, String> {
+    记忆库路径: &str,
+    任务标识: &str,
+) -> Result<Vec<String>, String> {
     let 记忆 = crate::读任务记忆(记忆库路径, 任务标识);
     let 全部 = crate::查全部记忆(记忆库路径);
     断言可重建(&记忆, &全部)?;
-    Ok(记忆.join("\n"))
+    Ok(记忆)
+}
+
+/// 组装单个池的消息列表：记忆上下文（系统，头部）→ 角色卡（系统）→ 任务（用户）
+fn 组装消息列表(
+    池名: &str, 任务标识: &str, 记忆文本: &str
+) -> Vec<moxing_fu::消息> {
+    let mut 列表 = vec![moxing_fu::消息::系统(format!("你是 {} 角色卡", 池名))];
+    if !记忆文本.is_empty() {
+        列表.insert(
+            0,
+            moxing_fu::消息::系统(format!("相关记忆：\n{}", 记忆文本)),
+        );
+    }
+    列表.push(moxing_fu::消息::用户(format!("任务：{}", 任务标识)));
+    列表
+}
+
+/// 正向可审计断言：读到的每条记忆必须出现在消息列表（注入确实发生，可见⟺已记录）
+fn 断言注入到位(记忆: &[String], 消息列表: &[moxing_fu::消息]) -> Result<(), String> {
+    for 条 in 记忆 {
+        let 内容 = 条.split_once("] ").map(|(_, 内)| 内).unwrap_or(条.as_str());
+        if !消息列表.iter().any(|m| m.内容.contains(内容)) {
+            return Err(format!("正向断言失败：读到的记忆未注入消息列表：{}", 条));
+        }
+    }
+    Ok(())
 }
 
 /// 反向可审计断言：凡注入 LLM 的记忆必可由持久库重建（可见⟺已记录）
@@ -239,10 +262,52 @@ mod 测试 {
         let 路径_str = 路径.to_str().unwrap();
         // 空库自动种子落盘（含 程序/实施 "36 格位闭环 API"）
         let _ = crate::读取任务相关记忆_持久(路径_str, "实现 Cargo 测试");
-        let 结果 = 组装记忆上下文_按路径(路径_str, "实现 Cargo 测试");
-        let 文本 = 结果.expect("注入记忆必须可被持久库重建");
-        assert!(文本.contains("程序"), "应命中程序范畴记忆：{}", 文本);
+        let 记忆 =
+            组装记忆上下文_按路径(路径_str, "实现 Cargo 测试").expect("注入记忆必须可被持久库重建");
+        assert!(
+            记忆.iter().any(|m| m.contains("程序")),
+            "应命中程序范畴记忆：{:?}",
+            记忆
+        );
         let _ = std::fs::remove_file(&路径);
+    }
+
+    #[test]
+    fn 组装消息列表_记忆注入头部() {
+        let 记忆文本 = "[程序] 36 格位闭环 API\n[规则] 命名门禁规则";
+        let 列表 = 组装消息列表("道祖", "实现 Cargo 测试", 记忆文本);
+        // 首条为记忆系统消息
+        assert!(matches!(列表[0].角色, moxing_fu::角色::系统));
+        assert!(
+            列表[0].内容.contains("36 格位闭环 API"),
+            "首条应含记忆：{}",
+            列表[0].内容
+        );
+        assert!(列表[0].内容.contains("命名门禁规则"));
+        // 末条为用户任务
+        let 用户 = 列表
+            .iter()
+            .find(|m| matches!(m.角色, moxing_fu::角色::用户))
+            .expect("应有用户消息");
+        assert!(用户.内容.contains("实现 Cargo 测试"));
+    }
+
+    #[test]
+    fn 断言注入到位_正向通过() {
+        let 记忆 = vec!["[程序] 36 格位闭环 API".to_string()];
+        let 列表 = 组装消息列表("道祖", "任务", "[程序] 36 格位闭环 API");
+        assert!(断言注入到位(&记忆, &列表).is_ok());
+    }
+
+    #[test]
+    fn 断言注入到位_缺失记忆失败() {
+        let 记忆 = vec!["[程序] 36 格位闭环 API".to_string()];
+        // 消息列表不含该记忆（仅角色卡）→ 正向断言应失败
+        let 列表 = vec![moxing_fu::消息::系统("你是 道祖 角色卡".to_string())];
+        match 断言注入到位(&记忆, &列表) {
+            Err(错) => assert!(错.contains("未注入"), "错误信息应含「未注入」：{}", 错),
+            Ok(_) => panic!("缺失记忆必须判定正向断言失败"),
+        }
     }
 
     #[test]
@@ -300,8 +365,16 @@ mod 测试 {
         assert_eq!(r.退出码, 4, "真实 LLM 失败应 fail loud：{}", r.输出);
         // 后端=真实 总是出现
         assert!(r.输出.contains("后端=真实"));
-        assert!(r.输出.contains("[真实模式]"), "有 key 应走真实模式：{}", r.输出);
-        assert!(r.输出.contains("[LLM 道祖 错误]"), "HTTP 失败应记录错误：{}", r.输出);
+        assert!(
+            r.输出.contains("[真实模式]"),
+            "有 key 应走真实模式：{}",
+            r.输出
+        );
+        assert!(
+            r.输出.contains("[LLM 道祖 错误]"),
+            "HTTP 失败应记录错误：{}",
+            r.输出
+        );
         清空_env();
     }
 
@@ -321,7 +394,10 @@ mod 测试 {
         let _g = env_lock();
         清空_env();
         std::env::set_var("LLM_API_KEY", "sk-test");
-        std::env::set_var("LLM_BASE_URL", "https://api.test.invalid/v1/chat/completions");
+        std::env::set_var(
+            "LLM_BASE_URL",
+            "https://api.test.invalid/v1/chat/completions",
+        );
         let r = 跑流水线_真实_llm("explicit-real-with-key");
         // 故障合约：有 key 但 HTTP 失败 → fail loud（退出码 4）
         assert_eq!(r.退出码, 4, "真实 LLM 失败应 fail loud：{}", r.输出);
