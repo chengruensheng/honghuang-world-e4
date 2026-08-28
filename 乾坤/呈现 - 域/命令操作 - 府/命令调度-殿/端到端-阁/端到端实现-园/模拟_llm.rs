@@ -29,6 +29,9 @@ pub fn 跑流水线_真实_llm(任务标识: &str) -> 命令结果 {
 enum 连接抽象 {
     Mock(MockLLM连接),
     HTTP(moxing_fu::HTTP连接),
+    /// 故障注入：测试超时/非2xx 契约时直接返回指定错误（确定性，不碰真实网络）
+    #[cfg(test)]
+    故障(moxing_fu::错误),
 }
 
 impl moxing_fu::模型连接 for 连接抽象 {
@@ -40,13 +43,14 @@ impl moxing_fu::模型连接 for 连接抽象 {
         match self {
             连接抽象::Mock(c) => c.发送(配置, 请求),
             连接抽象::HTTP(c) => c.发送(配置, 请求),
+            #[cfg(test)]
+            连接抽象::故障(e) => Err(e.clone()),
         }
     }
 }
 
 fn run_pipeline_with_backend(任务标识: &str, 模式: 后端模式) -> 命令结果 {
-    use moxing_fu::{请求, LLM调用器};
-    use renwu_zhixing_fu::{任务, 分类_机械判定, 角色分类};
+    use moxing_fu::LLM调用器;
 
     let mut 日志 = format!("[e2e 启动] 任务：{} 后端={:?}\n", 任务标识, 模式);
 
@@ -75,6 +79,18 @@ fn run_pipeline_with_backend(任务标识: &str, 模式: 后端模式) -> 命令
             LLM调用器::新建(池, 连接抽象::Mock(MockLLM连接::新建()))
         }
     };
+
+    run_pipeline_with_connection(任务标识, 调用器, 日志)
+}
+
+/// 核心执行：任务判定 + 记忆注入 + 4 分类循环 + 累积 llm失败数 + fail loud（可注入连接，供故障契约测试）
+fn run_pipeline_with_connection(
+    任务标识: &str,
+    调用器: moxing_fu::LLM调用器<连接抽象>,
+    mut 日志: String,
+) -> 命令结果 {
+    use moxing_fu::请求;
+    use renwu_zhixing_fu::{任务, 分类_机械判定, 角色分类};
 
     let 任务_obj = 任务 {
         标识: 任务标识.to_string(),
@@ -350,6 +366,55 @@ mod 测试 {
                 全文本
             );
         }
+    }
+
+    #[test]
+    fn 测试_契约_超时_退出码4() {
+        let _g = env_lock();
+        清空_env();
+        let 调用器 = moxing_fu::LLM调用器::新建(
+            build_mock_pool(),
+            连接抽象::故障(moxing_fu::错误::超时),
+        );
+        let r = run_pipeline_with_connection("超时契约", 调用器, String::new());
+        assert_eq!(r.退出码, 4, "超时应 fail loud：{}", r.输出);
+        assert!(r.输出.contains("[LLM 道祖 错误]"), "应记录错误：{}", r.输出);
+        assert!(r.输出.contains("请求超时"), "应含超时错误文本：{}", r.输出);
+        assert!(r.输出.contains("LLM 失败数=4"), "4 角色全失败：{}", r.输出);
+    }
+
+    #[test]
+    fn 测试_契约_非2xx_401_退出码4() {
+        let _g = env_lock();
+        清空_env();
+        let 调用器 = moxing_fu::LLM调用器::新建(
+            build_mock_pool(),
+            连接抽象::故障(moxing_fu::错误::HTTP错误 {
+                状态码: 401,
+                原因: "Unauthorized".to_string(),
+            }),
+        );
+        let r = run_pipeline_with_connection("401契约", 调用器, String::new());
+        assert_eq!(r.退出码, 4, "401 应 fail loud：{}", r.输出);
+        assert!(r.输出.contains("[LLM 道祖 错误]"));
+        assert!(r.输出.contains("HTTP 错误 401"), "应含 401：{}", r.输出);
+    }
+
+    #[test]
+    fn 测试_契约_非2xx_500_退出码4() {
+        let _g = env_lock();
+        清空_env();
+        let 调用器 = moxing_fu::LLM调用器::新建(
+            build_mock_pool(),
+            连接抽象::故障(moxing_fu::错误::HTTP错误 {
+                状态码: 500,
+                原因: "Internal Server Error".to_string(),
+            }),
+        );
+        let r = run_pipeline_with_connection("500契约", 调用器, String::new());
+        assert_eq!(r.退出码, 4, "500 应 fail loud：{}", r.输出);
+        assert!(r.输出.contains("[LLM 道祖 错误]"));
+        assert!(r.输出.contains("HTTP 错误 500"), "应含 500：{}", r.输出);
     }
 
     #[test]
