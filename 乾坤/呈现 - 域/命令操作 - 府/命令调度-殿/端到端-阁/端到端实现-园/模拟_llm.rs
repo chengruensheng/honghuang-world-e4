@@ -127,15 +127,25 @@ fn run_pipeline_with_connection(
 
     let 池顺序 = ["道祖", "圣人", "准圣", "大罗"];
     let mut llm失败数 = 0;
+    // 角色接力：上一角色产出作为下一角色上下文（道祖→圣人→大罗→准圣，不可跳层不可反序）
+    let mut 上文 = String::new();
     for 池名 in 池顺序.iter() {
-        let 消息列表 = 组装消息列表(池名, 任务标识, &记忆文本);
+        let mut 消息列表 = 组装消息列表(池名, 任务标识, &记忆文本);
+        if !上文.is_empty() {
+            消息列表.push(moxing_fu::消息::用户(
+                format!("上一角色产出：\n{}", 上文),
+            ));
+        }
         // 正向断言（拦截点：调用器.调用 之前）：读到的每条记忆必须出现在消息列表
         if let Err(错) = 断言注入到位(&记忆, &消息列表) {
             return 命令结果::失败(4, 错);
         }
         let req = 请求::新建("", 消息列表);
         match 调用器.调用(池名, &req) {
-            Ok(响应) => 日志.push_str(&format!("[LLM {}] {}\n", 池名, 响应.内容)),
+            Ok(响应) => {
+                上文 = 响应.内容.clone();
+                日志.push_str(&format!("[LLM {}] {}\n", 池名, 响应.内容));
+            }
             Err(e) => {
                 llm失败数 += 1;
                 日志.push_str(&format!("[LLM {} 错误] {}\n", 池名, 脱敏(e.to_string())));
@@ -385,6 +395,47 @@ mod 测试 {
                 全文本
             );
         }
+    }
+
+    #[test]
+    fn 测试_角色接力_上一角色产出注入下一角色() {
+        let _g = env_lock();
+        清空_env();
+        std::env::set_var("LLM_BACKEND", "mock");
+        最近请求槽.with(|槽| 槽.borrow_mut().clear());
+        let r = 跑流水线_mock_llm("接力传递审计");
+        assert_eq!(r.退出码, 0, "流水线应成功：{}", r.输出);
+        let 请求们 = 最近请求槽.with(|槽| 槽.borrow().clone());
+        assert_eq!(请求们.len(), 4, "应捕获 4 角色请求：{}", 请求们.len());
+        // 链首（道祖）不应有「上一角色产出」
+        let 道祖消息 = 请求们[0]
+            .消息列表
+            .iter()
+            .map(|m| m.内容.clone())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(
+            !道祖消息.contains("上一角色产出"),
+            "道祖是链首不应有上文：{}",
+            道祖消息
+        );
+        // 第 2 角色（圣人）应收到道祖产出作为「上一角色产出」
+        let 圣人消息 = 请求们[1]
+            .消息列表
+            .iter()
+            .map(|m| m.内容.clone())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(
+            圣人消息.contains("上一角色产出"),
+            "圣人应收到道祖产出：{}",
+            圣人消息
+        );
+        assert!(
+            圣人消息.contains("[mock LLM 响应]"),
+            "上文应含道祖 mock 响应：{}",
+            圣人消息
+        );
     }
 
     #[test]
