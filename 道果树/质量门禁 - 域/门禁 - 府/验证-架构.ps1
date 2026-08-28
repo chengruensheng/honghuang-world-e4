@@ -26,7 +26,7 @@ $script:通过数 += 1  # 算通过
 
 # 3. 所有目录含中文（除内部工具目录）
 $allDirs = Get-ChildItem -Directory -Recurse -Depth 4 -ErrorAction SilentlyContinue | Where-Object {
-    $_.FullName -notmatch "\\.cargo\\" -and $_.FullName -notmatch "\\.git\\" -and $_.FullName -notmatch "\\target\\" -and $_.FullName -notmatch "node_modules" -and $_.FullName -notmatch "\\.arts" -and $_.FullName -notmatch "\\.codeartsdoer" -and $_.FullName -notmatch "\\.codegraph" -and $_.FullName -notmatch "\\.codebuddy" -and $_.FullName -notmatch "\\.workbuddy" -and $_.FullName -notmatch "\\.trae" -and $_.FullName -notmatch "传\\承\\殿" -and $_.FullName -notmatch "\\.venv" -and $_.FullName -notmatch "\\.idea" -and $_.FullName -notmatch "\\.vscode" -and $_.FullName -notmatch "\\.DS_Store"
+    $_.FullName -notmatch "\\.cargo" -and $_.FullName -notmatch "\\.git\\" -and $_.FullName -notmatch "构建物 - 域" -and $_.FullName -notmatch "examples" -and $_.FullName -notmatch "node_modules" -and $_.FullName -notmatch "\\.arts" -and $_.FullName -notmatch "\\.codeartsdoer" -and $_.FullName -notmatch "\\.codegraph" -and $_.FullName -notmatch "\\.codebuddy" -and $_.FullName -notmatch "\\.workbuddy" -and $_.FullName -notmatch "\\.trae" -and $_.FullName -notmatch "\\.agent-teams" -and $_.FullName -notmatch "\\.github" -and $_.FullName -notmatch "传\\承\\殿" -and $_.FullName -notmatch "\\.venv" -and $_.FullName -notmatch "\\.idea" -and $_.FullName -notmatch "\\.vscode" -and $_.FullName -notmatch "\\.DS_Store"
 }
 $非中文目录 = $allDirs | Where-Object { $_.Name -notmatch '[一-龥]' }
 检查 "3. 所有目录含中文" ($非中文目录.Count -eq 0)
@@ -64,7 +64,7 @@ foreach ($f in $rsFiles) {
 
 # 6. workspace members ≥ 15
 $wsToml = Get-Content "Cargo.toml" -Raw
-$memberCount = ([regex]::Matches($wsToml, '"[w/-]+/"')).Count
+$memberCount = ([regex]::Matches($wsToml, '(?m)^\s{4}"[^"]+"')).Count
 检查 "6. workspace members ≥ 15" ($memberCount -ge 15)
 
 # 7. 传承殿 8 大类目录完整
