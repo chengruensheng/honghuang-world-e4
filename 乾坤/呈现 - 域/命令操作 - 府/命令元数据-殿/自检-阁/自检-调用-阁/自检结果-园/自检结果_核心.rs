@@ -221,6 +221,22 @@ pub fn 跑全检(项目根: &Path) -> 自检报告 {
             &["doc", "--no-deps"],
             项目根,
         ),
+        // 注意：不能经 cargo run 重建自检入口.exe（自检进程正占用该 exe，Windows 无法覆盖）——
+        // 直接调用已编译示例，避免重建
+        检查命令(
+            14,
+            "任务收尾三件套 (临时库)",
+            "E:/洪荒 - 世界/道果树/构建物 - 域/debug/examples/自检入口.exe",
+            &[
+                "记忆",
+                "收尾",
+                "自检任务",
+                "自检三件套通过",
+                "5",
+                "C:/Users/17628/AppData/Local/Temp/自检收尾临时库.sq3",
+            ],
+            项目根,
+        ),
     ];
     let 通过 = 项.iter().filter(|x| x.状态 == 状态::通过).count() as u32;
     let 失败 = 项.iter().filter(|x| x.状态 == 状态::失败).count() as u32;
