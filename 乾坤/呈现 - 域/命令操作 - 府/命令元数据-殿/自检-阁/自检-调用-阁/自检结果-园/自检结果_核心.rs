@@ -137,7 +137,7 @@ pub fn 跑全检(项目根: &Path) -> 自检报告 {
         ),
         检查命令(
             6,
-            "决策契约 9文件",
+            "决策契约 lint（12 契约）",
             "powershell.exe",
             &[
                 "-NoProfile",
