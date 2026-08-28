@@ -91,6 +91,7 @@ fn run_pipeline_with_backend(任务标识: &str, 模式: 后端模式) -> 命令
     };
 
     let 池顺序 = ["道祖", "圣人", "准圣", "大罗"];
+    let mut llm失败数 = 0;
     for 池名 in 池顺序.iter() {
         let mut 消息列表 = vec![
             moxing_fu::消息::系统(format!("你是 {} 角色卡", 池名)),
@@ -105,12 +106,23 @@ fn run_pipeline_with_backend(任务标识: &str, 模式: 后端模式) -> 命令
         let req = 请求::新建("", 消息列表);
         match 调用器.调用(池名, &req) {
             Ok(响应) => 日志.push_str(&format!("[LLM {}] {}\n", 池名, 响应.内容)),
-            Err(e) => 日志.push_str(&format!("[LLM {} 错误] {}\n", 池名, e)),
+            Err(e) => {
+                llm失败数 += 1;
+                日志.push_str(&format!("[LLM {} 错误] {}\n", 池名, e));
+            }
         }
     }
 
-    日志.push_str("[完成] e2e 任务全链路通过（追问 + 4 分类 LLM）\n");
-    命令结果::成功(日志)
+    日志.push_str(&format!(
+        "[完成] e2e 任务全链路（追问 + 4 分类 LLM）LLM 失败数={}\n",
+        llm失败数
+    ));
+    if llm失败数 > 0 {
+        // 真实 LLM 故障 fail loud：任一角色调用失败，流水线不得假装成功（frozen outcome）
+        命令结果::失败(4, 日志)
+    } else {
+        命令结果::成功(日志)
+    }
 }
 
 /// 组装记忆上下文：读持久库相关记忆 + 可审计断言（模型可见⟺已记录）
@@ -284,18 +296,12 @@ mod 测试 {
         // 有 key → 真实模式尝试 HTTP；但 base URL 是 .invalid 会失败
         // 此测试只验证：走到「真实模式」分支（[真实模式] 行），不验证 HTTP 成功
         let r = 跑流水线_mock_llm("env-real-with-key");
-        assert_eq!(r.退出码, 0);
-        // 后端=真实 总是出现（不论从环境变量构造成功还是降级，都来自后端模式::真实分支）
+        // 故障合约：真实 LLM 网络失败必须 fail loud（退出码 4），不得假装成功
+        assert_eq!(r.退出码, 4, "真实 LLM 失败应 fail loud：{}", r.输出);
+        // 后端=真实 总是出现
         assert!(r.输出.contains("后端=真实"));
-        // 如果从环境变量构造返回 Some 池 → 进入 [真实模式]；否则 [降级]
-        let 真实模式或降级 = r.输出.contains("[真实模式]") || r.输出.contains("[降级]");
-        assert!(
-            真实模式或降级,
-            "期望 [真实模式] 或 [降级]，实际输出：{}",
-            r.输出
-        );
-        // 4 分类调用应正常执行（不论 HTTP 成功与否，调用器都返回 Ok 或 Err）
-        assert!(r.输出.contains("[完成]"));
+        assert!(r.输出.contains("[真实模式]"), "有 key 应走真实模式：{}", r.输出);
+        assert!(r.输出.contains("[LLM 道祖 错误]"), "HTTP 失败应记录错误：{}", r.输出);
         清空_env();
     }
 
@@ -315,9 +321,12 @@ mod 测试 {
         let _g = env_lock();
         清空_env();
         std::env::set_var("LLM_API_KEY", "sk-test");
+        std::env::set_var("LLM_BASE_URL", "https://api.test.invalid/v1/chat/completions");
         let r = 跑流水线_真实_llm("explicit-real-with-key");
-        assert_eq!(r.退出码, 0);
+        // 故障合约：有 key 但 HTTP 失败 → fail loud（退出码 4）
+        assert_eq!(r.退出码, 4, "真实 LLM 失败应 fail loud：{}", r.输出);
         assert!(r.输出.contains("[真实模式]"));
+        assert!(r.输出.contains("[LLM 道祖 错误]"));
         清空_env();
     }
 
