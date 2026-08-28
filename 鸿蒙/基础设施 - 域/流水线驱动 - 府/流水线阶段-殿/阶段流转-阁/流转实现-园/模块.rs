@@ -3,3 +3,7 @@
 #[path = "阶段_核心.rs"]
 pub mod 阶段_核心;
 pub use 阶段_核心::*;
+
+#[path = "过程态_核心.rs"]
+pub mod 过程态_核心;
+pub use 过程态_核心::*;
