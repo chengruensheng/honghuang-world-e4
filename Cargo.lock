@@ -641,6 +641,9 @@ dependencies = [
 [[package]]
 name = "shijie"
 version = "0.1.0"
+dependencies = [
+ "mingling_caozuo_fu",
+]
 
 [[package]]
 name = "shishi_fu"

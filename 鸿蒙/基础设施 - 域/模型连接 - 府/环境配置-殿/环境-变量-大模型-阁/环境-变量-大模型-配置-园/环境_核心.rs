@@ -13,18 +13,33 @@ use crate::模型池_殿::{LLM池, LLM配置};
 /// 返回 None 表示 LLM_API_KEY 未设置（调用方应降级到 mock）
 pub fn 从环境变量构造() -> Option<LLM池> {
     use std::env;
-    let 密钥 = env::var("LLM_API_KEY").ok().filter(|s| !s.is_empty())?;
+    let 密钥 = env::var("LLM_API_KEY")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())?;
     // 端点优先 LLM_BASE_URL（空串视为未设）→ 回退 DEEPSEEK_URL（本机已注入的模型服务）→ OpenAI 兜底
     let 端点 = env::var("LLM_BASE_URL")
         .ok()
+        .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
-        .or_else(|| env::var("DEEPSEEK_URL").ok().filter(|s| !s.is_empty()))
+        .or_else(|| {
+            env::var("DEEPSEEK_URL")
+                .ok()
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+        })
         .unwrap_or_else(|| "https://api.openai.com/v1/chat/completions".to_string());
     // 默认模型同样三级回退：LLM_MODEL → DEEPSEEK_MODEL → gpt-3.5-turbo
     let 默认模型 = env::var("LLM_MODEL")
         .ok()
+        .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
-        .or_else(|| env::var("DEEPSEEK_MODEL").ok().filter(|s| !s.is_empty()))
+        .or_else(|| {
+            env::var("DEEPSEEK_MODEL")
+                .ok()
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+        })
         .unwrap_or_else(|| "gpt-3.5-turbo".to_string());
     let 超时 = env::var("LLM_TIMEOUT_MS")
         .ok()

@@ -83,6 +83,22 @@ fn run_pipeline_with_backend(任务标识: &str, 模式: 后端模式) -> 命令
     run_pipeline_with_connection(任务标识, 调用器, 日志)
 }
 
+/// 脱敏：错误信息里不得出现 API 密钥（Bearer token）
+/// 策略：把 "Bearer " 之后的 token 替换为 "***"（直至空白或引号）
+fn 脱敏(原文: String) -> String {
+    match 原文.find("Bearer ") {
+        Some(头) => {
+            let 起点 = 头 + "Bearer ".len();
+            let 尾 = 原文[起点..]
+                .find(|c| ['\'', '"', ' ', '\n', '\r'].contains(&c))
+                .map(|i| 起点 + i)
+                .unwrap_or(原文.len());
+            format!("{}Bearer ***{}", &原文[..头], &原文[尾..])
+        }
+        None => 原文,
+    }
+}
+
 /// 核心执行：任务判定 + 记忆注入 + 4 分类循环 + 累积 llm失败数 + fail loud（可注入连接，供故障契约测试）
 fn run_pipeline_with_connection(
     任务标识: &str,
@@ -120,7 +136,7 @@ fn run_pipeline_with_connection(
             Ok(响应) => 日志.push_str(&format!("[LLM {}] {}\n", 池名, 响应.内容)),
             Err(e) => {
                 llm失败数 += 1;
-                日志.push_str(&format!("[LLM {} 错误] {}\n", 池名, e));
+                日志.push_str(&format!("[LLM {} 错误] {}\n", 池名, 脱敏(e.to_string())));
             }
         }
     }
