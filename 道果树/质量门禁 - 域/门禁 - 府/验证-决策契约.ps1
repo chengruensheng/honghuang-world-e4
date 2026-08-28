@@ -1,4 +1,4 @@
-# 11. 决策契约 lint
+# 11. 决策契约 lint（12 契约）
 # 决策锚：260826-2230 工程-DSH + 260826-2220 治理-司衡
 # 标准：传承殿/03-决策/**/*.md 的 YAML frontmatter 必填 8 字段
 #      （id/title/stage/decided_by/falsifiable/upstream/implements/decided_at）
@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 11/11 决策契约 lint ==="
+Write-Host "=== 12/12 决策契约 lint ==="
 
 $必填 = @(
     "id", "title", "stage", "decided_by",
