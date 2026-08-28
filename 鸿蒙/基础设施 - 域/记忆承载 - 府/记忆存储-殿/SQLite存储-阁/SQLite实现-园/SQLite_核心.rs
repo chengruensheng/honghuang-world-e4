@@ -58,6 +58,11 @@ impl SQLite存储 {
             [],
         )
         .map_err(|e| 错误::格位路径非法(format!("SQLite 事件流表创建失败：{}", e)))?;
+        // 并发写互斥保障：写锁等待最多 5 秒（事件流 falsifiable：并发写不交错）
+        conn.busy_timeout(std::time::Duration::from_secs(5))
+            .map_err(|e| {
+                错误::格位路径非法(format!("SQLite busy_timeout 设置失败：{}", e))
+            })?;
         Ok(Self { db: conn })
     }
 }

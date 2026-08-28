@@ -553,6 +553,47 @@ mod 测试 {
     }
 
     #[test]
+    fn 事件流_并发写不交错() {
+        let 库 = 临时库("记忆库_事件流并发.db");
+        let _ = std::fs::remove_file(&库);
+        // 双线程各写 5 条（SQLite busy_timeout 保障写锁等待）
+        let 库一 = 库.clone();
+        let t1 = std::thread::spawn(move || {
+            for i in 0..5 {
+                事件流_记录(&库一, "线程一", &format!("事件{}", i)).unwrap();
+            }
+        });
+        let 库二 = 库.clone();
+        let t2 = std::thread::spawn(move || {
+            for i in 0..5 {
+                事件流_记录(&库二, "线程二", &format!("事件{}", i)).unwrap();
+            }
+        });
+        t1.join().unwrap();
+        t2.join().unwrap();
+        let 全部 = 事件流_全部(&库).unwrap();
+        assert_eq!(全部.len(), 10, "并发写应 10 条不丢失：{}", 全部.len());
+        assert!(
+            全部.iter().filter(|s| s.contains("线程一")).count() == 5
+                && 全部.iter().filter(|s| s.contains("线程二")).count() == 5,
+            "两线程各 5 条：{}",
+            全部.join(";")
+        );
+        // 序号严格递增（AUTOINCREMENT + 互斥）
+        let 序号: Vec<i64> = 全部
+            .iter()
+            .filter_map(|s| s.split(']').next())
+            .filter_map(|s| s.trim_start_matches('[').trim().parse().ok())
+            .collect();
+        assert!(
+            序号.windows(2).all(|w| w[0] < w[1]),
+            "序号应严格递增：{:?}",
+            序号
+        );
+        let _ = std::fs::remove_file(&库);
+    }
+
+    #[test]
     fn 会话记录_轨迹保留与终点归档() {
         let 库 = 临时库("记忆库_会话记录.db");
         let _ = std::fs::remove_file(&库);
