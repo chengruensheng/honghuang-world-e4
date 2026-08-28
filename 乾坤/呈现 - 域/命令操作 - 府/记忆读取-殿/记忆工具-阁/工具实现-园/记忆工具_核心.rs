@@ -4,8 +4,8 @@
 //! falsifiable：写入后读任务记忆命中；查全部记忆含新条目；工具永驻摘要 36 行
 
 use jiyi_chengzai_fu::{
-    本质阶段合法性, 来源, 格位, 格位中枢, 档位, 范畴, 记忆ID, 记忆存储, 记忆条目, 错误, 阶段,
-    SQLite存储,
+    所有格位, 本质阶段合法性, 来源, 格位, 格位中枢, 档位, 范畴, 记忆ID, 记忆存储, 记忆条目, 错误,
+    阶段, SQLite存储,
 };
 
 /// 默认持久记忆库路径（调用方可覆盖；相对当前目录）
@@ -178,6 +178,43 @@ pub fn 读取_三档投影(记忆库路径: &str) -> (Vec<String>, Vec<String>, 
     let 近因文本 = 格式化(&mut 近因);
     let 会话文本 = 格式化(&mut 会话);
     (首因文本, 近因文本, 会话文本)
+}
+
+/// 格位统计：每格位条目数 + 总条数 + 最稀疏/最密集合法格位
+///
+/// 承接 决策契约 260828-格位稀缺原则（36 格位上限 / 进退守恒 / 不弃高换低）：
+/// 稀缺护栏的前提是可观测，本工具把每格位条目数可视化，供写入方判断是否失衡。
+pub fn 格位统计(记忆库路径: &str) -> Result<Vec<String>, 错误> {
+    let 存储 = SQLite存储::文件新建(记忆库路径)?;
+    let 全部 = 存储.查_全部();
+    let 总数 = 全部.len();
+    let mut 行 = Vec::new();
+    let mut 清单: Vec<(String, String, usize)> = Vec::new();
+    for g in &所有格位 {
+        if !本质阶段合法性(g.范畴, g.阶段) {
+            continue;
+        }
+        let n = 全部
+            .iter()
+            .filter(|e| e.范畴 == g.范畴 && e.阶段 == g.阶段)
+            .count();
+        清单.push((g.范畴.名称().to_string(), g.阶段.名称().to_string(), n));
+        行.push(format!("{}·{}={}", g.范畴.名称(), g.阶段.名称(), n));
+    }
+    let 最稀疏 = 清单
+        .iter()
+        .min_by_key(|(_, _, n)| *n)
+        .map(|(c, p, n)| format!("{}·{}（{} 条）", c, p, n))
+        .unwrap_or_default();
+    let 最密集 = 清单
+        .iter()
+        .max_by_key(|(_, _, n)| *n)
+        .map(|(c, p, n)| format!("{}·{}（{} 条）", c, p, n))
+        .unwrap_or_default();
+    行.push(format!("总条数：{}", 总数));
+    行.push(format!("最稀疏格位：{}", 最稀疏));
+    行.push(format!("最密集格位：{}", 最密集));
+    Ok(行)
 }
 
 /// 完成度自评：执行收尾时对结果做 1-5 刻度自评并附依据，写入 经历/验收（来源 LLM，权档，无玉玺）
@@ -637,6 +674,37 @@ mod 测试 {
         );
         let 非法0 = 完成度自评(&库, "x", 0, "y");
         assert!(非法0.is_err(), "刻度 0 应拒绝");
+        let _ = std::fs::remove_file(&库);
+    }
+
+    #[test]
+    fn 格位统计_稀缺可见且数准确() {
+        let 库 = 临时库("记忆库_格位统计.db");
+        let _ = std::fs::remove_file(&库);
+        let 空 = 格位统计(&库).unwrap();
+        assert!(
+            空.iter().any(|s| s.ends_with("=0")),
+            "空库合法格位应全 0：{}",
+            空.join(";")
+        );
+        assert!(
+            空.iter().any(|s| s.starts_with("总条数：0")),
+            "空库总条数应 0：{}",
+            空.join(";")
+        );
+        写入_按格位(&库, 范畴::经历, 阶段::实施, "甲", "摘要甲").unwrap();
+        写入_按格位(&库, 范畴::经历, 阶段::实施, "乙", "摘要乙").unwrap();
+        let 行 = 格位统计(&库).unwrap();
+        assert!(
+            行.iter().any(|s| s == "经历·实施=2"),
+            "经历·实施 应=2：{}",
+            行.join(";")
+        );
+        assert!(
+            行.iter().any(|s| s.starts_with("总条数：2")),
+            "总条数应 2：{}",
+            行.join(";")
+        );
         let _ = std::fs::remove_file(&库);
     }
 
