@@ -75,12 +75,16 @@ fn main() {
     let 摘要 = 工具永驻摘要(&库);
     let 有内容 = 摘要
         .iter()
-        .filter(|s| s.contains(']') && !s.ends_with("] "))
+        .filter(|s| s.contains(']') && !s.ends_with("] ") && !s.contains("本质不可用"))
         .count();
-    println!("[6/6] 工具永驻摘要 ✓  36 行中 {} 行有内容", 有内容);
+    let 非法标注 = 摘要.iter().filter(|s| s.contains("本质不可用")).count();
+    println!(
+        "[6/6] 工具永驻摘要 ✓  36 行中 {} 行有内容（另有 {} 行非法格位标注本质不可用）",
+        有内容, 非法标注
+    );
     for 行 in 摘要
         .iter()
-        .filter(|s| s.contains(']') && !s.ends_with("] "))
+        .filter(|s| s.contains(']') && !s.ends_with("] ") && !s.contains("本质不可用"))
     {
         println!("       {}", 行);
     }

@@ -103,7 +103,7 @@ fn main() {
     assert_eq!(摘要.len(), 36, "永驻摘要固定 36 行（6 范畴 × 6 阶段）");
     let 有内容 = 摘要
         .iter()
-        .filter(|s| s.contains(']') && !s.ends_with("] "))
+        .filter(|s| s.contains(']') && !s.ends_with("] ") && !s.contains("本质不可用"))
         .count();
     assert_eq!(
         有内容, 3,
