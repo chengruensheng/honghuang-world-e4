@@ -196,11 +196,14 @@ fn build_mock_pool() -> moxing_fu::LLM池 {
 
 pub struct MockLLM连接 {
     pub 响应内容: String,
+    /// 最近一次收到的请求（审计捕获：模型可见⟺已记录 正向断言的可测试支撑）
+    pub 最近请求: std::sync::Mutex<Option<moxing_fu::请求>>,
 }
 impl MockLLM连接 {
     pub fn 新建() -> Self {
         Self {
             响应内容: "[mock LLM 响应]".to_string(),
+            最近请求: std::sync::Mutex::new(None),
         }
     }
 }
@@ -208,10 +211,25 @@ impl moxing_fu::模型连接 for MockLLM连接 {
     fn 发送(
         &self,
         _配置: &moxing_fu::LLM配置,
-        _请求: &moxing_fu::请求,
+        请求: &moxing_fu::请求,
     ) -> Result<moxing_fu::响应, moxing_fu::错误> {
+        // 审计捕获：请求存入字段（最近请求）+ thread_local 槽（供测试断言消息列表含注入记忆）
+        if let Ok(mut 槽) = self.最近请求.lock() {
+            *槽 = Some(请求.clone());
+        }
+        记录最近请求(请求);
         Ok(moxing_fu::响应::假响应(&self.响应内容))
     }
+}
+
+// 审计捕获槽：MockLLM连接::发送 把最近请求写入 thread_local，
+// 供单元测试断言「模型可见⟺已记录」（注入记忆必出现在发往 LLM 的真实请求消息列表）。
+thread_local! {
+    static 最近请求槽: std::cell::RefCell<Vec<moxing_fu::请求>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+fn 记录最近请求(请求: &moxing_fu::请求) {
+    最近请求槽.with(|槽| 槽.borrow_mut().push(请求.clone()));
 }
 
 #[cfg(test)]
@@ -307,6 +325,30 @@ mod 测试 {
         match 断言注入到位(&记忆, &列表) {
             Err(错) => assert!(错.contains("未注入"), "错误信息应含「未注入」：{}", 错),
             Ok(_) => panic!("缺失记忆必须判定正向断言失败"),
+        }
+    }
+
+    #[test]
+    fn 测试_流水线_请求消息列表_含注入记忆() {
+        let _g = env_lock();
+        清空_env();
+        最近请求槽.with(|槽| 槽.borrow_mut().clear());
+        let r = 跑流水线_mock_llm("记忆注入审计测试");
+        assert_eq!(r.退出码, 0, "流水线应成功：{}", r.输出);
+        let 请求们 = 最近请求槽.with(|槽| 槽.borrow().clone());
+        assert!(!请求们.is_empty(), "应捕获到发往 LLM 的请求");
+        for 请求 in &请求们 {
+            let 全文本 = 请求
+                .消息列表
+                .iter()
+                .map(|m| m.内容.clone())
+                .collect::<Vec<_>>()
+                .join("\n");
+            assert!(
+                全文本.contains("36 格位闭环 API"),
+                "请求消息列表应含注入记忆：{}",
+                全文本
+            );
         }
     }
 
