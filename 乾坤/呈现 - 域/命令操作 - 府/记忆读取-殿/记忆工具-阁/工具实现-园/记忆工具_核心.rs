@@ -772,12 +772,17 @@ mod 测试 {
         let 摘要 = 工具永驻摘要(&库);
         let 有内容 = 摘要
             .iter()
-            .filter(|s| s.contains(']') && !s.ends_with("] "))
+            .filter(|s| s.contains(']') && !s.ends_with("] ") && !s.contains("本质不可用"))
             .count();
         assert_eq!(
             有内容, 23,
             "永驻摘要有内容行应为 23（合法格位数），实际 {}",
             有内容
+        );
+        assert_eq!(摘要.len(), 36, "永驻摘要应 36 行：{}", 摘要.len());
+        assert!(
+            摘要.iter().any(|s| s.contains("本质不可用")),
+            "非法格位应标注本质不可用"
         );
         let 全部 = 查全部记忆(&库);
         assert_eq!(
