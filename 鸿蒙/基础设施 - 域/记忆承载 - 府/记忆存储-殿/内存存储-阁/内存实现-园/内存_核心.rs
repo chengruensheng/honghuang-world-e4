@@ -19,6 +19,9 @@ use crate::记忆类型_殿::{
 #[derive(Default)]
 pub struct 内存存储 {
     数据: HashMap<记忆ID, 记忆条目>,
+    /// 事件流（append-only：序号递增）
+    事件: Vec<(i64, String, String, String)>,
+    事件序号: i64,
 }
 
 impl 内存存储 {
@@ -81,6 +84,29 @@ impl 记忆存储 for 内存存储 {
     }
     fn 查_全部(&self) -> Vec<记忆条目> {
         self.数据.values().cloned().collect()
+    }
+
+    fn 事件流_追加(&mut self, 事件类型: &str, 内容: &str) -> Result<i64, 错误> {
+        self.事件序号 += 1;
+        let 时间戳 = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs().to_string())
+            .unwrap_or_else(|_| "0".to_string());
+        self.事件.push((
+            self.事件序号,
+            时间戳,
+            事件类型.to_string(),
+            内容.to_string(),
+        ));
+        Ok(self.事件序号)
+    }
+
+    fn 事件流_区间(&self, 起: i64, 止: i64) -> Vec<(i64, String, String, String)> {
+        self.事件
+            .iter()
+            .filter(|(n, _, _, _)| *n >= 起 && *n <= 止)
+            .cloned()
+            .collect()
     }
 }
 

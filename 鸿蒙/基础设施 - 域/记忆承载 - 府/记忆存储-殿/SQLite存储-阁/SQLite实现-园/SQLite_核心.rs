@@ -48,6 +48,16 @@ impl SQLite存储 {
             [],
         )
         .map_err(|e| 错误::格位路径非法(format!("SQLite 表创建失败：{}", e)))?;
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS 事件流 (
+                序号 INTEGER PRIMARY KEY AUTOINCREMENT,
+                时间戳 TEXT NOT NULL,
+                事件类型 TEXT NOT NULL,
+                内容 TEXT NOT NULL
+            )",
+            [],
+        )
+        .map_err(|e| 错误::格位路径非法(format!("SQLite 事件流表创建失败：{}", e)))?;
         Ok(Self { db: conn })
     }
 }
@@ -246,6 +256,42 @@ impl 记忆存储 for SQLite存储 {
             )
         })
         .collect()
+    }
+
+    fn 事件流_追加(&mut self, 事件类型: &str, 内容: &str) -> Result<i64, 错误> {
+        let 时间戳 = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs().to_string())
+            .unwrap_or_else(|_| "0".to_string());
+        let 结果 = self.db.execute(
+            "INSERT INTO 事件流 (时间戳, 事件类型, 内容) VALUES (?1, ?2, ?3)",
+            rusqlite::params![时间戳, 事件类型, 内容],
+        );
+        match 结果 {
+            Ok(_) => Ok(self.db.last_insert_rowid()),
+            Err(e) => Err(错误::格位路径非法(format!("事件流追加失败：{}", e))),
+        }
+    }
+
+    fn 事件流_区间(&self, 起: i64, 止: i64) -> Vec<(i64, String, String, String)> {
+        let mut stmt = match self.db.prepare(
+            "SELECT 序号, 时间戳, 事件类型, 内容 FROM 事件流 WHERE 序号 BETWEEN ?1 AND ?2 ORDER BY 序号",
+        ) {
+            Ok(s) => s,
+            Err(_) => return Vec::new(),
+        };
+        let rows = match stmt.query_map(rusqlite::params![起, 止], |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+            ))
+        }) {
+            Ok(r) => r,
+            Err(_) => return Vec::new(),
+        };
+        rows.filter_map(|r| r.ok()).collect()
     }
 }
 

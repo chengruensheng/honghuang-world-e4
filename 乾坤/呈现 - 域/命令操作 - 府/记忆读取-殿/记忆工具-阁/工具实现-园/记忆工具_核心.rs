@@ -180,6 +180,32 @@ pub fn 读取_三档投影(记忆库路径: &str) -> (Vec<String>, Vec<String>, 
     (首因文本, 近因文本, 会话文本)
 }
 
+/// 事件流_记录：append-only 时序事实（世界范畴的时序补充；SQLite 写事务串行互斥）
+///
+/// 事件流不更新不删除（序号 AUTOINCREMENT）；时间戳由存储后端填充。
+/// 用途：流水线阶段事件、测试数变化、版本发布等客观时序事实。
+pub fn 事件流_记录(
+    记忆库路径: &str, 事件类型: &str, 内容: &str
+) -> Result<i64, 错误> {
+    let mut 存储 = SQLite存储::文件新建(记忆库路径)?;
+    存储.事件流_追加(事件类型, 内容)
+}
+
+/// 事件流_读取：按序号区间读取（含端点），返回格式化行
+pub fn 事件流_读取(记忆库路径: &str, 起: i64, 止: i64) -> Result<Vec<String>, 错误> {
+    let 存储 = SQLite存储::文件新建(记忆库路径)?;
+    let rows = 存储.事件流_区间(起, 止);
+    Ok(rows
+        .into_iter()
+        .map(|(n, t, ty, c)| format!("[{n}] {t} {ty}：{c}"))
+        .collect())
+}
+
+/// 事件流_全部：读全量事件
+pub fn 事件流_全部(记忆库路径: &str) -> Result<Vec<String>, 错误> {
+    事件流_读取(记忆库路径, 0, i64::MAX)
+}
+
 /// 记会话：工作记忆完整保留（执行轨迹逐行写入 经历/实施，来源 LLM，权档，无玉玺）
 ///
 /// 无人开发方向（2026-08-28）：AI 执行过程完整可回溯，不依赖人类记录。
@@ -496,6 +522,33 @@ mod 测试 {
         let 首条 = 全部.iter().max_by_key(|e| e.id.0).unwrap();
         assert_eq!(首条.来源, 来源::人类, "确认后来源=人类（玉玺）");
         assert_eq!(首条.decided_by, "界主", "确认后决定者=界主");
+        let _ = std::fs::remove_file(&库);
+    }
+
+    #[test]
+    fn 事件流_追加有序与区间读取() {
+        let 库 = 临时库("记忆库_事件流.db");
+        let _ = std::fs::remove_file(&库);
+        let id1 = 事件流_记录(&库, "启动", "阶段3 开始").unwrap();
+        let id2 = 事件流_记录(&库, "测试", "331 项").unwrap();
+        let id3 = 事件流_记录(&库, "收尾", "提交").unwrap();
+        assert!(
+            id1 < id2 && id2 < id3,
+            "序号应递增：{} < {} < {}",
+            id1,
+            id2,
+            id3
+        );
+        let 区间 = 事件流_读取(&库, id2, id3).unwrap();
+        assert_eq!(区间.len(), 2, "区间读应 2 条：{}", 区间.len());
+        assert!(
+            区间[0].contains("测试"),
+            "区间首条应含事件类型：{}",
+            区间[0]
+        );
+        let 全部 = 事件流_全部(&库).unwrap();
+        assert_eq!(全部.len(), 3, "全部应 3 条：{}", 全部.len());
+        assert!(全部[0].contains("启动"), "全部首条应含启动：{}", 全部[0]);
         let _ = std::fs::remove_file(&库);
     }
 

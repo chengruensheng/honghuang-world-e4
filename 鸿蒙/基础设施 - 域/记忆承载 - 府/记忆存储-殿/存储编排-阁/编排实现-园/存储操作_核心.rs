@@ -15,6 +15,12 @@ pub trait 记忆存储 {
     fn 写(&mut self, 条目: 记忆条目) -> Result<(), 错误>;
     fn 删(&mut self, id: 记忆ID) -> Result<(), 错误>;
     fn 查_全部(&self) -> Vec<记忆条目>;
+
+    /// 事件流_追加：append-only 时序事实（不更新不删除，SQLite 写事务天然串行互斥）
+    /// 返回递增序号。时间戳由后端填充（SystemTime）。
+    fn 事件流_追加(&mut self, 事件类型: &str, 内容: &str) -> Result<i64, 错误>;
+    /// 事件流_区间：按序号区间读取（起..=止），返回 (序号, 时间戳, 事件类型, 内容)
+    fn 事件流_区间(&self, 起: i64, 止: i64) -> Vec<(i64, String, String, String)>;
 }
 
 /// 检索接口（三维正交：范畴+阶段 / 档位 / 来源 / 四维拼装）
