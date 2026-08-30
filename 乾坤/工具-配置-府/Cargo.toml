@@ -1,6 +1,6 @@
 [package]
 name = "gongju_peizhi_fu"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 license = "MIT"
 

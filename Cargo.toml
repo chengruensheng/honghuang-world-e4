@@ -39,12 +39,12 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.75"
 license = "MIT OR Apache-2.0"
 authors = ["传承殿·界主"]
-description = "洪荒 · 世界 · v3 · 9 根维度 + 6 层结构 + 4 分类抽象"
+description = "洪荒 · 世界 · v0.2.0 · 9 根维度 + 6 层结构 + 4 分类抽象"
 
 [workspace.dependencies]
 # 决策锚：260826-2230 工程-DSH § DSH 万物皆插件

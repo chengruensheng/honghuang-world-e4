@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 8/15 无 src/ 平铺 ==="
+Write-Host "=== 8/17 无 src/ 平铺 ==="
 $违规 = @()
 
 # 检查项目根目录严禁 src/

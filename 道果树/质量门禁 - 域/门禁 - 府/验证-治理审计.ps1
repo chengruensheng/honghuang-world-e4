@@ -9,7 +9,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 16/16 治理审计（元三治） ==="
+Write-Host "=== 16/17 治理审计（元三治） ==="
 
 $违规 = @()
 

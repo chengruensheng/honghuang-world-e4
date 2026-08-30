@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 12/15 命名唯一性 ==="
+Write-Host "=== 12/17 命名唯一性 ==="
 $违规 = @()
 
 $后缀 = @("-殿", "-阁", "-园", "-数据", "-配置", "-模板", "-脚本", "-资源")

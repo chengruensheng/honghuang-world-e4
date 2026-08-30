@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 13/15 防退化 ≥2 殿 (jianyan_gongju 跑全部 第15项) ==="
+Write-Host "=== 13/17 防退化 ≥2 殿 (jianyan_gongju 跑全部 第15项) ==="
 cargo test -p jianyan_gongju --lib 测试_跑全部_返回15项
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[FAIL] 防退化 ≥2 殿 未通过" -ForegroundColor Red

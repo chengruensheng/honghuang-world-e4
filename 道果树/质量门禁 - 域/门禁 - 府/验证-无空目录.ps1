@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 9/15 无空目录 ==="
+Write-Host "=== 9/17 无空目录 ==="
 $空目录 = Get-ChildItem -Path . -Recurse -Directory -Force -ErrorAction SilentlyContinue |
     Where-Object {
         $p = $_.FullName

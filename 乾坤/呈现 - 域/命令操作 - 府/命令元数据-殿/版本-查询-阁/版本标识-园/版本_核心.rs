@@ -1,6 +1,6 @@
 //! 版本标识 - CLI 版本字符串
 
-pub const 版本: &str = "v0.1.0";
+pub const 版本: &str = "v0.2.0";
 pub const 项目: &str = "洪荒 · 世界";
 
 #[cfg(test)]

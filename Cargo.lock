@@ -50,14 +50,14 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
 name = "chajian_xiawenxian_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "chengben_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -75,14 +75,14 @@ dependencies = [
 
 [[package]]
 name = "danyuan_ceshi_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "diaoqian_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -150,66 +150,66 @@ dependencies = [
 
 [[package]]
 name = "gongju_fu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "gongju_haxi_fu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "gongju_hello_fu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "gongju_jiami_fu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "gongju_jiaoyanhe_fu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "gongju_lujing_fu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "gongju_peizhi_fu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "gongju_rizhi_fu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "gongju_shijianchuo_fu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "gongju_shizhong_fu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "gongju_suiji_fu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "gongju_yasuo_fu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "gongju_zhengze_fu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "guance_tanzhen_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "guize_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
 ]
@@ -344,7 +344,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "jiankong_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -353,7 +353,7 @@ dependencies = [
 
 [[package]]
 name = "jianyan_gongju"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -362,7 +362,7 @@ dependencies = [
 
 [[package]]
 name = "jiyi_chengzai_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "rusqlite",
  "serde",
@@ -370,7 +370,7 @@ dependencies = [
 
 [[package]]
 name = "kuawai_shijian_zongxian_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "guize_fu",
  "serde",
@@ -401,7 +401,7 @@ checksum = "47d9d19d1d6efa0109d2f65ff4c85cddd50bd572e5a00127ab10987290bcefae"
 
 [[package]]
 name = "liushuixian_qudong_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "rusqlite",
  "serde",
@@ -421,7 +421,7 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "mingling_caozuo_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "gongju_fu",
  "jiyi_chengzai_fu",
@@ -445,7 +445,7 @@ dependencies = [
 
 [[package]]
 name = "moxing_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -461,7 +461,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "peizhi_guanli_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
 ]
@@ -507,7 +507,7 @@ dependencies = [
 
 [[package]]
 name = "renwu_zhixing_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "gongju_fu",
  "serde",
@@ -529,7 +529,7 @@ dependencies = [
 
 [[package]]
 name = "rizhi_jilu_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
 ]
@@ -637,7 +637,7 @@ dependencies = [
 
 [[package]]
 name = "shengji_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "jiyi_chengzai_fu",
  "serde",
@@ -647,14 +647,14 @@ dependencies = [
 
 [[package]]
 name = "shijie"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "mingling_caozuo_fu",
 ]
 
 [[package]]
 name = "shishi_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1038,14 +1038,14 @@ dependencies = [
 
 [[package]]
 name = "zhuangtai_gongxiang_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "zhuiwen_fu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "moxing_fu",
  "renwu_zhixing_fu",

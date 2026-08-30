@@ -7,7 +7,7 @@ $ErrorActionPreference = "Continue"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 7/15 依赖审查 (cargo deny check) ==="
+Write-Host "=== 7/17 依赖审查 (cargo deny check) ==="
 $which = Get-Command cargo-deny -ErrorAction SilentlyContinue
 if ($null -eq $which) {
     Write-Host "[SKIP] cargo-deny 未安装"

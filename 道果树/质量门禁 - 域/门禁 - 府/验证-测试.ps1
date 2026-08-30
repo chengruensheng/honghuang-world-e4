@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 3/15 单元测试 (cargo test) ==="
+Write-Host "=== 3/17 单元测试 (cargo test) ==="
 cargo test --workspace --lib --jobs 1 -- --test-threads=1
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[FAIL] 单元测试未全绿" -ForegroundColor Red

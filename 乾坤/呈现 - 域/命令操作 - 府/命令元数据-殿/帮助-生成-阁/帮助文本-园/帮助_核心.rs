@@ -2,7 +2,7 @@
 
 pub fn 帮助文本() -> Vec<&'static str> {
     vec![
-        "洪荒 · 世界 v3 CLI",
+        "洪荒 · 世界 v0.2.0 CLI",
         "用法：",
         "  洪荒 init                    初始化工作空间",
         "  洪荒 status                  查看状态",

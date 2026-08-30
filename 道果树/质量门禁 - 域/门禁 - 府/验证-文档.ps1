@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 5/15 文档 (cargo doc --no-deps) ==="
+Write-Host "=== 5/17 文档 (cargo doc --no-deps) ==="
 cargo doc --no-deps --workspace
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[FAIL] 文档生成失败" -ForegroundColor Red

@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 15/15 文档收割门（防 AI 文档污染） ==="
+Write-Host "=== 15/17 文档收割门（防 AI 文档污染） ==="
 
 $违规 = @()
 
