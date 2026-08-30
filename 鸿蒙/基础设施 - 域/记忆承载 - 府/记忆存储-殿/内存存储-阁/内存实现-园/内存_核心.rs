@@ -22,6 +22,12 @@ pub struct 内存存储 {
     /// 事件流（append-only：序号递增）
     事件: Vec<(i64, String, String, String)>,
     事件序号: i64,
+    /// 任务账本（任务标识 → (已交付, 已归档) 两个独立累计标志）
+    账本: HashMap<String, (bool, bool)>,
+    /// 账本登记顺序（HashMap 不保序，FIFO 债务队列依赖此有序序列）
+    账本顺序: Vec<String>,
+    /// 降级快照（债务超上限降级归档的待补提炼任务标识，进程重启不丢语义）
+    快照: Vec<String>,
 }
 
 impl 内存存储 {
@@ -109,6 +115,68 @@ impl 记忆存储 for 内存存储 {
             .filter(|(n, _, _, _)| *n >= 起 && *n <= 止)
             .cloned()
             .collect()
+    }
+
+    fn 账本_登记(&mut self, 任务标识: &str) -> Result<(), 错误> {
+        if !self.账本.contains_key(任务标识) {
+            self.账本顺序.push(任务标识.to_string());
+        }
+        self.账本.insert(任务标识.to_string(), (false, false));
+        Ok(())
+    }
+
+    fn 账本_标记交付(&mut self, 任务标识: &str) -> Result<(), 错误> {
+        let 项 = self
+            .账本
+            .get_mut(任务标识)
+            .ok_or_else(|| 错误::账本任务不存在(任务标识.to_string()))?;
+        项.0 = true;
+        Ok(())
+    }
+
+    fn 账本_标记归档(&mut self, 任务标识: &str) -> Result<(), 错误> {
+        let 项 = self
+            .账本
+            .get_mut(任务标识)
+            .ok_or_else(|| 错误::账本任务不存在(任务标识.to_string()))?;
+        项.1 = true;
+        Ok(())
+    }
+
+    fn 账本_债务(&self) -> Result<i64, 错误> {
+        let 交付 = self.账本.values().filter(|(交, _)| *交).count() as i64;
+        let 归档 = self.账本.values().filter(|(_, 归)| *归).count() as i64;
+        Ok(交付 - 归档)
+    }
+
+    fn 账本_债务队列(&self) -> Result<Vec<String>, 错误> {
+        Ok(self
+            .账本顺序
+            .iter()
+            .filter(|标| {
+                self.账本
+                    .get(*标)
+                    .map(|(交, 归)| *交 && !*归)
+                    .unwrap_or(false)
+            })
+            .cloned()
+            .collect())
+    }
+
+    fn 快照_登记(&mut self, 任务标识: &str) -> Result<(), 错误> {
+        if !self.快照.iter().any(|标| 标 == 任务标识) {
+            self.快照.push(任务标识.to_string());
+        }
+        Ok(())
+    }
+
+    fn 快照_全部(&self) -> Result<Vec<String>, 错误> {
+        Ok(self.快照.clone())
+    }
+
+    fn 快照_清除(&mut self, 任务标识: &str) -> Result<(), 错误> {
+        self.快照.retain(|标| 标 != 任务标识);
+        Ok(())
     }
 }
 
