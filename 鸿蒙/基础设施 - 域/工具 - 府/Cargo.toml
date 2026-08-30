@@ -1,0 +1,14 @@
+[package]
+name = "gongju_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "工具-府 - 5 类真实工具（写/读/执行/版本/编排）+ 工具调用循环（接 02-概念/可插拔/01-可插拔.md）"
+
+[lib]
+name = "gongju_fu"
+path = "入口.rs"
+
+[dependencies]

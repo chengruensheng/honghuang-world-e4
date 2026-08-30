@@ -149,6 +149,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "gongju_fu"
+version = "0.1.0"
+
+[[package]]
 name = "gongju_haxi_fu"
 version = "0.1.0"
 
@@ -419,11 +423,13 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 name = "mingling_caozuo_fu"
 version = "0.1.0"
 dependencies = [
+ "gongju_fu",
  "jiyi_chengzai_fu",
  "liushuixian_qudong_fu",
  "moxing_fu",
  "renwu_zhixing_fu",
  "serde",
+ "serde_json",
  "zhuiwen_fu",
 ]
 
@@ -503,6 +509,7 @@ dependencies = [
 name = "renwu_zhixing_fu"
 version = "0.1.0"
 dependencies = [
+ "gongju_fu",
  "serde",
 ]
 
