@@ -58,14 +58,14 @@ impl Manifest {
             let key = kv[0].trim();
             let value = kv[1].trim();
             match key {
-                "名称" => m.名称 = parse_string(value)?,
-                "副作用" => m.副作用 = parse_side_effect(value)?,
-                "不可改" => m.不可改 = parse_bool(value)?,
-                "decided_by" => m.decided_by = parse_string(value)?,
-                "falsifiable" => m.falsifiable = parse_string(value)?,
-                "implements" => m.implements = parse_string(value)?,
+                "名称" => m.名称 = 解析字符串(value)?,
+                "副作用" => m.副作用 = 解析副作用(value)?,
+                "不可改" => m.不可改 = 解析布尔(value)?,
+                "decided_by" => m.decided_by = 解析字符串(value)?,
+                "falsifiable" => m.falsifiable = 解析字符串(value)?,
+                "implements" => m.implements = 解析字符串(value)?,
                 "实现" | "依赖" => {
-                    let arr = parse_array(value)?;
+                    let arr = 解析数组(value)?;
                     if key == "实现" {
                         m.实现 = arr;
                     } else {
@@ -85,12 +85,12 @@ impl Manifest {
     }
 }
 
-fn parse_string(value: &str) -> Result<String, Manifest错误> {
+fn 解析字符串(value: &str) -> Result<String, Manifest错误> {
     let trimmed = value.trim().trim_matches(',');
     Ok(trimmed.trim_matches('"').trim_matches('\'').to_string())
 }
 
-fn parse_bool(value: &str) -> Result<bool, Manifest错误> {
+fn 解析布尔(value: &str) -> Result<bool, Manifest错误> {
     match value.trim().trim_matches(',') {
         "true" => Ok(true),
         "false" => Ok(false),
@@ -98,7 +98,7 @@ fn parse_bool(value: &str) -> Result<bool, Manifest错误> {
     }
 }
 
-fn parse_side_effect(value: &str) -> Result<副作用, Manifest错误> {
+fn 解析副作用(value: &str) -> Result<副作用, Manifest错误> {
     match value.trim().trim_matches(',').trim_matches('"') {
         "none" => Ok(副作用::无),
         "mutating" => Ok(副作用::修改),
@@ -107,7 +107,7 @@ fn parse_side_effect(value: &str) -> Result<副作用, Manifest错误> {
     }
 }
 
-fn parse_array(value: &str) -> Result<Vec<String>, Manifest错误> {
+fn 解析数组(value: &str) -> Result<Vec<String>, Manifest错误> {
     let trimmed = value
         .trim()
         .trim_matches(',')

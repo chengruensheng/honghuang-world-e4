@@ -41,10 +41,11 @@ pub fn 从环境变量构造() -> Option<LLM池> {
                 .filter(|s| !s.is_empty())
         })
         .unwrap_or_else(|| "gpt-3.5-turbo".to_string());
+    // 超时默认 120s：8000 token 输出窗口下真实 LLM 生成慢，30s 会误判超时（失败数虚高）
     let 超时 = env::var("LLM_TIMEOUT_MS")
         .ok()
         .and_then(|s| s.parse::<u32>().ok())
-        .unwrap_or(30000);
+        .unwrap_or(120000);
 
     let 取分类模型 = |分类: &str| -> String {
         env::var(format!("LLM_MODEL_{}", 分类.to_uppercase())).unwrap_or_else(|_| 默认模型.clone())
@@ -71,7 +72,7 @@ mod 测试 {
     use std::sync::{Mutex, OnceLock};
 
     /// env var 测试串行锁（cargo test 默认并行会污染全局 env）
-    fn env_lock() -> std::sync::MutexGuard<'static, ()> {
+    fn 环境锁() -> std::sync::MutexGuard<'static, ()> {
         static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
         LOCK.get_or_init(|| Mutex::new(()))
             .lock()
@@ -80,7 +81,7 @@ mod 测试 {
 
     #[test]
     fn 测试_无环境变量返回None() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::remove_var("LLM_API_KEY");
         std::env::remove_var("LLM_BASE_URL");
         std::env::remove_var("LLM_MODEL");
@@ -94,7 +95,7 @@ mod 测试 {
 
     #[test]
     fn 测试_空字符串API_KEY返回None() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::set_var("LLM_API_KEY", "");
         assert!(从环境变量构造().is_none());
         std::env::remove_var("LLM_API_KEY");
@@ -102,7 +103,7 @@ mod 测试 {
 
     #[test]
     fn 测试_有效API_KEY返回Some池() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::set_var("LLM_API_KEY", "sk-test-123");
         std::env::set_var("LLM_BASE_URL", "https://api.test.com/v1/chat/completions");
         std::env::set_var("LLM_MODEL", "gpt-4");
@@ -126,7 +127,7 @@ mod 测试 {
 
     #[test]
     fn 测试_4分类各自模型名覆盖() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::set_var("LLM_API_KEY", "sk-test");
         std::env::set_var("LLM_MODEL", "default-model");
         std::env::set_var("LLM_MODEL_DAOZU", "claude-3-opus");
@@ -144,17 +145,17 @@ mod 测试 {
 
     #[test]
     fn 测试_超时默认值() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::set_var("LLM_API_KEY", "sk-test");
         std::env::remove_var("LLM_TIMEOUT_MS");
         let 池 = 从环境变量构造().unwrap();
-        assert_eq!(池.道祖池.as_ref().unwrap().超时毫秒, 30000);
+        assert_eq!(池.道祖池.as_ref().unwrap().超时毫秒, 120000);
         std::env::remove_var("LLM_API_KEY");
     }
 
     #[test]
     fn 测试_超时自定义() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::set_var("LLM_API_KEY", "sk-test");
         std::env::set_var("LLM_TIMEOUT_MS", "60000");
         let 池 = 从环境变量构造().unwrap();
@@ -165,7 +166,7 @@ mod 测试 {
 
     #[test]
     fn 测试_空BASE_URL回退DEEPSEEK端点() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::set_var("LLM_API_KEY", "sk-test");
         std::env::set_var("LLM_BASE_URL", "");
         std::env::set_var("DEEPSEEK_URL", "https://token-plan-cn.xiaomimimo.com");
@@ -184,7 +185,7 @@ mod 测试 {
 
     #[test]
     fn 测试_空MODEL回退DEEPSEEK模型() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::set_var("LLM_API_KEY", "sk-test");
         std::env::set_var("LLM_MODEL", "");
         std::env::set_var("DEEPSEEK_MODEL", "mimo-v2.5-pro");
