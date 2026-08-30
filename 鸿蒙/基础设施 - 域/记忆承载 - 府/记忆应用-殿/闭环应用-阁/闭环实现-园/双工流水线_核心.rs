@@ -155,7 +155,10 @@ mod 测试 {
 
     #[test]
     fn 双工_降级快照_持久库跨进程恢复() {
-        let 库 = format!("降级快照持久化_{}.sq3", std::process::id());
+        let 库 = std::env::temp_dir()
+            .join(format!("降级快照持久化_{}.sq3", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
         let _ = std::fs::remove_file(&库);
         {
             let 存储 = SQLite存储::文件新建(&库).unwrap();

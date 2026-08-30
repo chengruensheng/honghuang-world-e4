@@ -160,7 +160,10 @@ mod 测试 {
 
     #[test]
     fn 召回_验收对比_含规则门禁红线() {
-        let 库 = format!("规则召回_{}.sq3", std::process::id());
+        let 库 = std::env::temp_dir()
+            .join(format!("规则召回_{}.sq3", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
         let _ = std::fs::remove_file(&库);
         // 写规则格位（规则×门禁 + 规则×红线），来源 LLM 无玉玺
         crate::写入_按格位(

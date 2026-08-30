@@ -1207,7 +1207,10 @@ mod 测试 {
     fn 测试_交付回填_mock_终裁通过写执行产出块() {
         let _g = 环境锁();
         清空_env();
-        let 库 = format!("回填测试_{}.sq3", std::process::id());
+        let 库 = std::env::temp_dir()
+            .join(format!("回填测试_{}.sq3", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
         let _ = std::fs::remove_file(&库);
         let 池 = 构建模拟池();
         let 调用器 = moxing_fu::LLM调用器::新建(池, 连接抽象::Mock(MockLLM连接::新建()));
@@ -1240,7 +1243,10 @@ mod 测试 {
     fn 测试_交付回填_终裁打回不回填() {
         let _g = 环境锁();
         清空_env();
-        let 库 = format!("回填打回_{}.sq3", std::process::id());
+        let 库 = std::env::temp_dir()
+            .join(format!("回填打回_{}.sq3", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
         let _ = std::fs::remove_file(&库);
         let 池 = 构建模拟池();
         let mut 连接 = MockLLM连接::新建();
@@ -1271,7 +1277,10 @@ mod 测试 {
     fn 测试_后端整理_端到端_交付回填债务清零() {
         let _g = 环境锁();
         清空_env();
-        let 库 = format!("后端整理_{}.sq3", std::process::id());
+        let 库 = std::env::temp_dir()
+            .join(format!("后端整理_{}.sq3", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
         let _ = std::fs::remove_file(&库);
         let 池 = 构建模拟池();
         let 调用器 = moxing_fu::LLM调用器::新建(池, 连接抽象::Mock(MockLLM连接::新建()));
@@ -1316,7 +1325,10 @@ mod 测试 {
     fn 测试_前端交付后_后台线程异步还债() {
         let _g = 环境锁();
         清空_env();
-        let 库 = format!("真并发_{}.sq3", std::process::id());
+        let 库 = std::env::temp_dir()
+            .join(format!("真并发_{}.sq3", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
         let _ = std::fs::remove_file(&库);
         let 池 = 构建模拟池();
         let 调用器 = moxing_fu::LLM调用器::新建(池, 连接抽象::Mock(MockLLM连接::新建()));
@@ -1367,7 +1379,10 @@ mod 测试 {
     fn 测试_后端整理降级_提炼失败仍归档债务清零() {
         let _g = 环境锁();
         清空_env();
-        let 库 = format!("降级整理_{}.sq3", std::process::id());
+        let 库 = std::env::temp_dir()
+            .join(format!("降级整理_{}.sq3", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
         let _ = std::fs::remove_file(&库);
         // 前端登记 + 交付 → 债务=1
         {
@@ -1397,7 +1412,10 @@ mod 测试 {
     fn 测试_四时机召回_验收对比与玉玺裁决() {
         let _g = 环境锁();
         清空_env();
-        let 库 = format!("四时机召回_{}.sq3", std::process::id());
+        let 库 = std::env::temp_dir()
+            .join(format!("四时机召回_{}.sq3", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
         let _ = std::fs::remove_file(&库);
         // 写 执行×验证 验收块（时机③召回源）+ 目标×当前 玉玺块（时机④召回源，带手印）
         {
@@ -1475,7 +1493,10 @@ mod 测试 {
     fn 测试_验收对比_跨任务隔离() {
         let _g = 环境锁();
         清空_env();
-        let 库 = format!("跨任务隔离_{}.sq3", std::process::id());
+        let 库 = std::env::temp_dir()
+            .join(format!("跨任务隔离_{}.sq3", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
         let _ = std::fs::remove_file(&库);
         {
             let 存储 = jiyi_chengzai_fu::SQLite存储::文件新建(&库).unwrap();
@@ -1621,7 +1642,10 @@ mod 测试 {
     fn 测试_质量门禁_终裁通过但缺必填改判打回() {
         let _g = 环境锁();
         清空_env();
-        let 库 = format!("门禁否决_{}.sq3", std::process::id());
+        let 库 = std::env::temp_dir()
+            .join(format!("门禁否决_{}.sq3", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
         let _ = std::fs::remove_file(&库);
         let 池 = 构建模拟池();
         let mut 连接 = MockLLM连接::新建();
@@ -1650,7 +1674,10 @@ mod 测试 {
     fn 测试_终裁结构化_不通过也判打回() {
         let _g = 环境锁();
         清空_env();
-        let 库 = format!("结构化打回_{}.sq3", std::process::id());
+        let 库 = std::env::temp_dir()
+            .join(format!("结构化打回_{}.sq3", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
         let _ = std::fs::remove_file(&库);
         let 池 = 构建模拟池();
         let mut 连接 = MockLLM连接::新建();
@@ -1675,7 +1702,10 @@ mod 测试 {
     fn 测试_打回重投_终裁打回触发下探重投() {
         let _g = 环境锁();
         清空_env();
-        let 库 = format!("打回重投_{}.sq3", std::process::id());
+        let 库 = std::env::temp_dir()
+            .join(format!("打回重投_{}.sq3", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
         let _ = std::fs::remove_file(&库);
         let 池 = 构建模拟池();
         let mut 连接 = MockLLM连接::新建();
@@ -1727,7 +1757,10 @@ mod 测试 {
     fn 测试_打回上限可配置_上限1只重投1轮() {
         let _g = 环境锁();
         清空_env();
-        let 库 = format!("打回上限1_{}.sq3", std::process::id());
+        let 库 = std::env::temp_dir()
+            .join(format!("打回上限1_{}.sq3", std::process::id()))
+            .to_string_lossy()
+            .into_owned();
         let _ = std::fs::remove_file(&库);
         let 池 = 构建模拟池();
         let mut 连接 = MockLLM连接::新建();
