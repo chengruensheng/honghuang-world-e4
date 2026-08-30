@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 11/11 架构校验 ==="
+Write-Host "=== 架构校验（历史脚本，已由 校验-工具/架构校验.rs 替代，不在 15 项内） ==="
 
 $失败数 = 0
 $通过数 = 0

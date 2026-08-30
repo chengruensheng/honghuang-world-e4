@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 4/10 编译 (cargo check --all-targets) ==="
+Write-Host "=== 4/15 编译 (cargo check --all-targets) ==="
 cargo check --workspace --all-targets
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[FAIL] 编译失败" -ForegroundColor Red

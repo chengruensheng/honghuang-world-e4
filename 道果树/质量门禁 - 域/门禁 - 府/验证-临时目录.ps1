@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 10/10 无临时目录残留 ==="
+Write-Host "=== 10/15 无临时目录残留 ==="
 $违规 = @()
 
 # 检查 临时文件夹/

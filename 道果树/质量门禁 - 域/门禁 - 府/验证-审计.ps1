@@ -7,7 +7,7 @@ $ErrorActionPreference = "Continue"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 6/10 安全审计 (cargo audit) ==="
+Write-Host "=== 6/15 安全审计 (cargo audit) ==="
 $which = Get-Command cargo-audit -ErrorAction SilentlyContinue
 if ($null -eq $which) {
     Write-Host "[SKIP] cargo-audit 未安装" -ForegroundColor Yellow

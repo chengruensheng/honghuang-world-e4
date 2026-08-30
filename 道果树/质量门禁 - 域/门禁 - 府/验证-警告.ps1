@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 2/10 静态分析 (cargo clippy) ==="
+Write-Host "=== 2/15 静态分析 (cargo clippy) ==="
 cargo clippy --workspace --all-targets -- -D warnings
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[FAIL] clippy 警告未清零" -ForegroundColor Red

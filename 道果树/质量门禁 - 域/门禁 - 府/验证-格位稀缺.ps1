@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 14/14 格位稀缺（36 格位上限） ==="
+Write-Host "=== 14/15 格位稀缺（36 格位上限） ==="
 
 $类型定义 = "鸿蒙/基础设施 - 域/记忆承载 - 府/记忆类型-殿/类型定义-阁/类型实现-园/类型定义_核心.rs"
 if (-not (Test-Path $类型定义)) {

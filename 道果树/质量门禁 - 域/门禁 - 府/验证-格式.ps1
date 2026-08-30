@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 1/10 格式 (cargo fmt --check) ==="
+Write-Host "=== 1/15 格式 (cargo fmt --check) ==="
 cargo fmt --all -- --check
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[FAIL] 格式未通过" -ForegroundColor Red

@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
-Write-Host "=== 12/12 决策契约 lint ==="
+Write-Host "=== 11/15 决策契约 lint ==="
 
 $必填 = @(
     "id", "title", "stage", "decided_by",
