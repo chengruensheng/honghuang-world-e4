@@ -19,7 +19,7 @@ pub enum 后端模式 {
 }
 
 /// env var 测试串行锁（cargo test 默认并行会污染全局 env）
-fn env_lock() -> std::sync::MutexGuard<'static, ()> {
+fn 环境锁() -> std::sync::MutexGuard<'static, ()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
         .lock()
@@ -53,7 +53,7 @@ pub fn 选择后端(env_value: Option<&str>) -> 后端模式 {
 
 /// 测试：env var 串行锁
 pub fn 测试用锁() -> std::sync::MutexGuard<'static, ()> {
-    env_lock()
+    环境锁()
 }
 
 #[cfg(test)]
@@ -62,7 +62,7 @@ mod 测试 {
 
     #[test]
     fn 测试_解析_real() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::set_var("LLM_BACKEND", "real");
         assert_eq!(解析后端模式(), 后端模式::真实);
         std::env::remove_var("LLM_BACKEND");
@@ -70,7 +70,7 @@ mod 测试 {
 
     #[test]
     fn 测试_解析_mock() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::set_var("LLM_BACKEND", "mock");
         assert_eq!(解析后端模式(), 后端模式::Mock);
         std::env::remove_var("LLM_BACKEND");
@@ -78,7 +78,7 @@ mod 测试 {
 
     #[test]
     fn 测试_解析_空字符串_默认() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::set_var("LLM_BACKEND", "");
         assert_eq!(解析后端模式(), 后端模式::默认);
         std::env::remove_var("LLM_BACKEND");
@@ -86,14 +86,14 @@ mod 测试 {
 
     #[test]
     fn 测试_解析_未设置_默认() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::remove_var("LLM_BACKEND");
         assert_eq!(解析后端模式(), 后端模式::默认);
     }
 
     #[test]
     fn 测试_解析_拼写错误_默认() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::set_var("LLM_BACKEND", "Real");
         assert_eq!(解析后端模式(), 后端模式::默认);
         std::env::remove_var("LLM_BACKEND");

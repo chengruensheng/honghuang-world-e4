@@ -13,6 +13,7 @@ path = "入口.rs"
 
 [dependencies]
 serde = { workspace = true }
+serde_json = { workspace = true }
 # 阶段 6：CLI 调流水线与任务执行
 liushuixian_qudong_fu = { path = "../../../鸿蒙/基础设施 - 域/流水线驱动 - 府" }
 renwu_zhixing_fu = { path = "../../../鸿蒙/基础设施 - 域/任务执行 - 府" }
@@ -23,3 +24,5 @@ moxing_fu = { path = "../../../鸿蒙/基础设施 - 域/模型连接 - 府" }
 zhuiwen_fu = { path = "../../../鸿蒙/基础设施 - 域/追问引擎 - 府" }
 # 阶段 25号 AI自给自足 Step4：任务前读取相关格位（记忆闭环）
 jiyi_chengzai_fu = { path = "../../../鸿蒙/基础设施 - 域/记忆承载 - 府" }
+# 阶段 2 自举：确定性执行器走工具府路径/命令白名单（LLM 产意图，确定程序执行）
+gongju_fu = { path = "../../../鸿蒙/基础设施 - 域/工具 - 府" }

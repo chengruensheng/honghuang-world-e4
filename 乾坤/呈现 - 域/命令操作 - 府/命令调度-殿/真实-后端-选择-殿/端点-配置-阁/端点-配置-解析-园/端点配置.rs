@@ -15,6 +15,8 @@ pub struct 端点配置 {
     pub 端点: String,
     pub 超时毫秒: u32,
     pub 模型: String,
+    /// 打回重试上限（契约「可循环打回≤3 轮」的上界；生产默认 3：对齐契约上界，打回重投给真实 LLM 三次重投机会）
+    pub 打回上限: usize,
 }
 
 impl 端点配置 {
@@ -24,13 +26,14 @@ impl 端点配置 {
             端点: "https://api.openai.com/v1/chat/completions".to_string(),
             超时毫秒: 30000,
             模型: "gpt-3.5-turbo".to_string(),
+            打回上限: 3,
         }
     }
 }
 
 /// env var 测试串行锁
 #[cfg(test)]
-fn env_lock() -> std::sync::MutexGuard<'static, ()> {
+fn 环境锁() -> std::sync::MutexGuard<'static, ()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
         .lock()
@@ -47,11 +50,38 @@ pub fn 读端点配置() -> 端点配置 {
         .and_then(|s| s.parse::<u32>().ok())
         .unwrap_or(30000);
     let 模型 = env::var("LLM_MODEL").unwrap_or_else(|_| "gpt-3.5-turbo".to_string());
+    let 打回上限 = env::var("LLM_打回上限")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(3);
     端点配置 {
         端点,
         超时毫秒,
         模型,
+        打回上限,
     }
+}
+
+/// 从环境变量读终裁温度（道祖终裁采样温度，默认 0.3；0.1 过严、0.7 非确定，折中 0.3）
+///
+/// 非法值回退默认 0.3（不 fail loud：温度非安全关键，静默回退不影响正确性）
+pub fn 读终裁温度() -> f32 {
+    std::env::var("LLM_终裁温度")
+        .ok()
+        .and_then(|s| s.parse::<f32>().ok())
+        .filter(|t| (0.0..=1.0).contains(t))
+        .unwrap_or(0.3)
+}
+
+/// 从环境变量读终裁采样次数（道祖终裁多次采样取多数，默认 1 生产不增成本；实验设 3 对冲采样非确定）
+///
+/// 非法值/零/负回退 1（不 fail loud：采样次数非安全关键）。
+pub fn 读终裁采样次数() -> usize {
+    std::env::var("LLM_终裁采样次数")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .filter(|n| *n >= 1)
+        .unwrap_or(1)
 }
 
 /// 显式构造端点配置（测试入口）
@@ -75,6 +105,7 @@ pub fn 构造端点配置(
         端点,
         超时毫秒,
         模型,
+        打回上限: 3,
     }
 }
 
@@ -134,7 +165,7 @@ mod 测试 {
 
     #[test]
     fn 测试_读端点配置_无env() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::remove_var("LLM_BASE_URL");
         std::env::remove_var("LLM_TIMEOUT_MS");
         std::env::remove_var("LLM_MODEL");
@@ -144,7 +175,7 @@ mod 测试 {
 
     #[test]
     fn 测试_读端点配置_自定义env() {
-        let _g = env_lock();
+        let _g = 环境锁();
         std::env::set_var(
             "LLM_BASE_URL",
             "https://api.deepseek.com/v1/chat/completions",
@@ -158,5 +189,31 @@ mod 测试 {
         std::env::remove_var("LLM_BASE_URL");
         std::env::remove_var("LLM_TIMEOUT_MS");
         std::env::remove_var("LLM_MODEL");
+    }
+
+    #[test]
+    fn 测试_读终裁温度_无env走默认() {
+        let _g = 环境锁();
+        std::env::remove_var("LLM_终裁温度");
+        assert_eq!(读终裁温度(), 0.3);
+    }
+
+    #[test]
+    fn 测试_读终裁温度_自定义() {
+        let _g = 环境锁();
+        std::env::set_var("LLM_终裁温度", "0.1");
+        assert_eq!(读终裁温度(), 0.1);
+        std::env::remove_var("LLM_终裁温度");
+    }
+
+    #[test]
+    fn 测试_读终裁温度_非法值回退默认() {
+        let _g = 环境锁();
+        // 非法：非数值 + 超范围（>1.0）均回退 0.3
+        std::env::set_var("LLM_终裁温度", "abc");
+        assert_eq!(读终裁温度(), 0.3);
+        std::env::set_var("LLM_终裁温度", "2.5");
+        assert_eq!(读终裁温度(), 0.3);
+        std::env::remove_var("LLM_终裁温度");
     }
 }

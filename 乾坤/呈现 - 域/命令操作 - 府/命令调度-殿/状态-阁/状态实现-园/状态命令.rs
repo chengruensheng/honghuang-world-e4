@@ -2,9 +2,10 @@
 //!
 //! 决策锚：260828-自动状态报告（第五十三轮）
 //! falsifiable：status 输出含「最近提交」「未提交/未跟踪」「工作空间」三节，
-//!             且工作空间府数 = 根 Cargo.toml members 路径行数（当前 33），非硬编码常量。
+//!             且工作空间府数 = 根 Cargo.toml members 路径行数（当前 34），非硬编码常量。
 
 use super::super::super::{命令, 命令结果};
+use crate::{状态报告, 默认记忆库路径};
 use std::path::Path;
 use std::process::Command;
 
@@ -23,7 +24,19 @@ impl 命令 for Status命令 {
         输出.push_str(&未提交统计(根));
         输出.push('\n');
         输出.push_str(&format!("工作空间：{} 个府\n", 府数(根)));
-        输出.push_str("\n质量门禁（15 项）：运行「自检」命令获取最新通过/失败\n");
+        输出.push_str("\n质量门禁（16 项）：运行「自检」命令获取最新通过/失败\n");
+
+        // 记忆库状态报告（36 格位分布 + 债务 + 待补提炼 + 玉玺块数）
+        输出.push_str("\n── 记忆库状态报告 ──\n");
+        match 状态报告(默认记忆库路径) {
+            Ok(行) => {
+                for 每行 in 行 {
+                    输出.push_str(&每行);
+                    输出.push('\n');
+                }
+            }
+            Err(e) => 输出.push_str(&format!("记忆库状态报告不可用：{}\n", e)),
+        }
 
         命令结果::成功(输出)
     }
@@ -77,15 +90,15 @@ mod 测试 {
     use super::*;
     use crate::命令;
 
-    /// 防退化：工作空间府数必须与根 Cargo.toml members 路径行数一致（当前 33），
+    /// 防退化：工作空间府数必须与根 Cargo.toml members 路径行数一致（当前 34），
     /// 杜绝状态报告退回硬编码假数字。
     #[test]
-    fn 府数_读根Cargo_toml为33() {
+    fn 府数_读根Cargo_toml为34() {
         let 根 = Path::new("E:\\洪荒 - 世界");
         assert_eq!(
             府数(根),
-            33,
-            "工作空间府数应为 33（根 Cargo.toml members 路径行数）"
+            34,
+            "工作空间府数应为 34（根 Cargo.toml members 路径行数）"
         );
     }
 
