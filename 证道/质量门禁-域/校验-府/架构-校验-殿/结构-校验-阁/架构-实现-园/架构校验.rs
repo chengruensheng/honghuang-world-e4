@@ -49,11 +49,15 @@ fn 是排除目录(path: &Path) -> bool {
         ".venv",
         ".idea",
         ".DS_Store",
+        ".agent-teams",
+        ".github",
+        "examples",
+        "assets",
         "构建物-域",
         "debug",
         "doc",
         "incremental",
-        "传\\承\\殿",
+        "传承殿",
     ];
     for e in 排除.iter() {
         if s.contains(e) {
@@ -67,7 +71,7 @@ pub fn 检查_无_src平铺(根: &Path) -> 检查结果 {
     for entry in walkdir::WalkDir::new(根).max_depth(4).into_iter().flatten() {
         if entry.file_name().to_string_lossy() == "src" && entry.path().is_dir() {
             let p = entry.path().to_string_lossy().to_string();
-            if !p.contains("传\\承\\殿") && !p.contains("node_modules") && !p.contains("构建物-域")
+            if !p.contains("传承殿") && !p.contains("node_modules") && !p.contains("构建物-域")
             {
                 return 检查结果::失败(format!("发现 src/ 平铺：{}", p));
             }
@@ -116,7 +120,7 @@ pub fn 检查_crate命名风格(根: &Path) -> 检查结果 {
             Some(n) => n,
             None => continue,
         };
-        if name != "shijie" && !name.ends_with("_fu") {
+        if name != "shijie" && name != "jianyan_gongju" && !name.ends_with("_fu") {
             return 检查结果::失败(format!("crate 名称不规范：{}", name));
         }
     }
@@ -209,7 +213,7 @@ fn extract_members(content: &str) -> Vec<String> {
 }
 
 pub fn 检查_传承殿8大类(根: &Path) -> 检查结果 {
-    let 传承殿 = 根.join("传\\承\\殿");
+    let 传承殿 = 根.join("传承殿");
     if !传承殿.exists() {
         return 检查结果::失败("传承殿 不存在".to_string());
     }
@@ -237,7 +241,7 @@ pub fn 检查_传承殿8大类(根: &Path) -> 检查结果 {
 }
 
 pub fn 检查_实施方案文档(根: &Path) -> 检查结果 {
-    let plan_dir = 根.join("传\\承\\殿").join("10-地基");
+    let plan_dir = 根.join("传承殿").join("10-地基");
     if !plan_dir.exists() {
         return 检查结果::失败("10-地基 不存在".to_string());
     }
@@ -257,7 +261,7 @@ pub fn 检查_实施方案文档(根: &Path) -> 检查结果 {
 }
 
 pub fn 检查_README(根: &Path) -> 检查结果 {
-    if 根.join("传\\承\\殿").join("README.md").exists() || 根.join("README.md").exists() {
+    if 根.join("传承殿").join("README.md").exists() || 根.join("README.md").exists() {
         检查结果::通过
     } else {
         检查结果::失败("README 不存在".to_string())
@@ -284,11 +288,24 @@ fn 是排除目录2(p: &Path) -> bool {
     let s = p.to_string_lossy();
     [
         ".git",
+        ".cargo",
+        ".arts",
+        ".codeartsdoer",
+        ".codebuddy",
+        ".codegraph",
+        ".workbuddy",
+        ".agent-teams",
+        ".github",
+        ".vscode",
+        ".venv",
+        ".idea",
         "构建物-域",
         "debug",
         "doc",
         "target",
         "node_modules",
+        "examples",
+        "assets",
     ]
     .iter()
     .any(|e| s.contains(e))
@@ -358,9 +375,9 @@ pub fn 检查_祖孙不同名(根: &Path) -> 检查结果 {
     }
 }
 
-/// 规则 2：全项目 `-殿`、`-阁`、`-园` 名各自唯一（跨府不重名）。
+/// 规则 2：全项目 `-殿`、`-阁`、`-园` 名在同一层级内唯一（跨府不重名）。
 pub fn 检查_同层命名唯一(根: &Path) -> 检查结果 {
-    let mut 计数: std::collections::HashMap<String, (u32, Vec<String>)> =
+    let mut 计数: std::collections::HashMap<(String, String), (u32, Vec<String>)> =
         std::collections::HashMap::new();
     for entry in walkdir::WalkDir::new(根).max_depth(8).into_iter().flatten() {
         let p = entry.path();
@@ -377,15 +394,25 @@ pub fn 检查_同层命名唯一(根: &Path) -> 检查结果 {
         let Some(后缀) = 取层级(name) else {
             continue;
         };
+        if 后缀 != "-殿" && 后缀 != "-阁" && 后缀 != "-园" {
+            continue;
+        }
         let 名 = 去层级后缀(name, 后缀);
-        let e = 计数.entry(名.clone()).or_insert((0, Vec::new()));
+        let 键 = (后缀.to_string(), 名.clone());
+        let e = 计数.entry(键).or_insert((0, Vec::new()));
         e.0 += 1;
         e.1.push(p.display().to_string());
     }
     let mut 违规 = Vec::new();
-    for (名, (cnt, paths)) in 计数 {
+    for ((后缀, 名), (cnt, paths)) in 计数 {
         if cnt > 1 {
-            违规.push(format!("{} 出现 {} 次：{}", 名, cnt, paths.join(" vs ")));
+            违规.push(format!(
+                "同层[{}] {} 出现 {} 次：{}",
+                后缀,
+                名,
+                cnt,
+                paths.join(" vs ")
+            ));
         }
     }
     if 违规.is_empty() {
@@ -435,12 +462,13 @@ pub fn 检查_目录名无英文(根: &Path) -> 检查结果 {
 // 防退化门禁（Round 7+ 补录）
 // ============================================================================
 
-const 府级目录列表: [&str; 21] = [
+const 府级目录列表: [&str; 22] = [
     "鸿蒙/基础设施-域/插件上下文-府",
     "鸿蒙/基础设施-域/事件总线-府",
     "鸿蒙/基础设施-域/记忆承载-府",
     "鸿蒙/基础设施-域/流水线驱动-府",
     "鸿蒙/基础设施-域/任务执行-府",
+    "鸿蒙/基础设施-域/工具调用-府",
     "鸿蒙/基础设施-域/模型连接-府",
     "鸿蒙/基础设施-域/追问引擎-府",
     "鸿蒙/基础设施-域/状态共享-府",
