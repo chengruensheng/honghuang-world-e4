@@ -1,0 +1,28 @@
+[package]
+name = "mingling_caozuo_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "命令操作-府 - CLI 入口 + 命令解析 + 权限校验"
+
+[lib]
+name = "mingling_caozuo_fu"
+path = "入口.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+# 阶段 6：CLI 调流水线与任务执行
+liushuixian_qudong_fu = { path = "../../../鸿蒙/基础设施-域/流水线驱动-府" }
+renwu_zhixing_fu = { path = "../../../鸿蒙/基础设施-域/任务执行-府" }
+# 阶段 7 Day 5-6：CLI 接 LLM 调用器（端到端 mock e2e）
+moxing_fu = { path = "../../../鸿蒙/基础设施-域/模型连接-府" }
+# 阶段 8 Day 5：CLI 接追问+投票（e2e 端到端）
+# crate 名是 zhuiwen_fu (拼音) 不是 zhuwen_fu
+zhuiwen_fu = { path = "../../../鸿蒙/基础设施-域/追问引擎-府" }
+# 阶段 25号 AI自给自足 Step4：任务前读取相关格位（记忆闭环）
+jiyi_chengzai_fu = { path = "../../../鸿蒙/基础设施-域/记忆承载-府" }
+# 阶段 2 自举：确定性执行器走工具府路径/命令白名单（LLM 产意图，确定程序执行）
+gongju_fu = { path = "../../../鸿蒙/基础设施-域/工具调用-府" }

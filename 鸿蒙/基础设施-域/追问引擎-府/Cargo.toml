@@ -1,0 +1,18 @@
+[package]
+name = "zhuiwen_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "追问引擎-府 - 4 问题 enum + 触发率判定（接 02-概念/追问/05-追问.md）"
+
+[lib]
+name = "zhuiwen_fu"
+path = "入口.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+renwu_zhixing_fu = { path = "../任务执行-府" }
+moxing_fu = { path = "../模型连接-府" }

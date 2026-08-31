@@ -153,54 +153,6 @@ name = "gongju_fu"
 version = "0.2.0"
 
 [[package]]
-name = "gongju_haxi_fu"
-version = "0.2.0"
-
-[[package]]
-name = "gongju_hello_fu"
-version = "0.2.0"
-
-[[package]]
-name = "gongju_jiami_fu"
-version = "0.2.0"
-
-[[package]]
-name = "gongju_jiaoyanhe_fu"
-version = "0.2.0"
-
-[[package]]
-name = "gongju_lujing_fu"
-version = "0.2.0"
-
-[[package]]
-name = "gongju_peizhi_fu"
-version = "0.2.0"
-
-[[package]]
-name = "gongju_rizhi_fu"
-version = "0.2.0"
-
-[[package]]
-name = "gongju_shijianchuo_fu"
-version = "0.2.0"
-
-[[package]]
-name = "gongju_shizhong_fu"
-version = "0.2.0"
-
-[[package]]
-name = "gongju_suiji_fu"
-version = "0.2.0"
-
-[[package]]
-name = "gongju_yasuo_fu"
-version = "0.2.0"
-
-[[package]]
-name = "gongju_zhengze_fu"
-version = "0.2.0"
-
-[[package]]
 name = "guance_tanzhen_fu"
 version = "0.2.0"
 dependencies = [

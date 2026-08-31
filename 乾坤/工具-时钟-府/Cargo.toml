@@ -1,9 +1,0 @@
-[package]
-name = "gongju_shizhong_fu"
-version.workspace = true
-edition = "2021"
-license = "MIT"
-
-[lib]
-name = "gongju_shizhong_fu"
-path = "入口.rs"

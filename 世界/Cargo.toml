@@ -17,4 +17,4 @@ path = "二进制入口.rs"
 
 [dependencies]
 # 真实生产流程：世界 bin 编排命令操作-府 CLI（run 走真实 LLM 后端）
-mingling_caozuo_fu = { path = "../乾坤/呈现 - 域/命令操作 - 府" }
+mingling_caozuo_fu = { path = "../乾坤/界面呈现-域/命令操作-府" }
