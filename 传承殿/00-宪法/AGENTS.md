@@ -42,7 +42,7 @@
 
 ## 三、不变量
 
-- 完成度刻度：**带「占位」的入口 = 未完成**；质量唯一标尺 = `cargo test --workspace` 全绿 + `cargo clippy --workspace -- -D warnings` 零警告 + `bash 一键全验.sh` 10/10 全绿。
+- 完成度刻度：**带「占位」的入口 = 未完成**；质量唯一标尺 = `cargo test --workspace` 全绿 + `cargo clippy --workspace -- -D warnings` 零警告 + `bash 一键全验.sh` 17/17 全绿。
 - 一旦决策拍板（带 decided_by），**不可被推翻除非新决策覆盖**——所有推翻需新 falsifiable 论证。
 
 ## 四、决策记录
@@ -63,12 +63,12 @@
 cargo run -p mingling_caozuo_fu --example 自检入口 -- 自检
 # 或：cargo build -p mingling_caozuo_fu --example 自检入口 && cargo run -p mingling_caozuo_fu --example 自检入口 -- 自检
 
-# 期望：13/13 通过（10 cargo + 3 powershell 门禁），如失败先修再开发
+# 期望：15/15 通过（10 cargo + 5 门禁），如失败先修再开发
 ```
 
 ### 5 个必读文档（开始任务前必读，不是建议）
 
-1. 传承殿/README.md — 项目入口 + 当前 23 crate/251 测试/13 门禁基线
+1. 传承殿/README.md — 项目入口 + 当前 22 crate/481 测试/17 门禁基线
 2. 传承殿/10-地基/16-统一六层风格-实施方案.md — 6 层结构定义
 3. 传承殿/10-地基/14-命名唯一性门禁-实施方案.md — 命名白名单 + 判规则
 4. 传承殿/04-设计/命名哲学-判据.md — 祖孙三层语义判据
@@ -81,10 +81,10 @@ cargo run -p mingling_caozuo_fu --example 自检入口 -- 自检
 | 格式 | cargo fmt --all -- --check | 0 diff |
 | 静态分析 | cargo clippy --workspace --all-targets -- -D warnings | 0 警告 |
 | 单元测试 | cargo test --workspace --lib --test-threads=1 | 全过 |
-| 架构校验 | cargo test -p jianyan_gongju --lib | 15 项全过 |
-| 决策契约 | powershell -NoProfile -ExecutionPolicy Bypass -File 道果树/质量门禁 - 域/门禁 - 府/验证-决策契约.ps1 | 9 文件 PASS |
-| 命名唯一性 | 同上 验证-命名唯一性.ps1 | PASS |
-| 防退化 ≥2 殿 | cargo test -p jianyan_gongju --lib 测试_跑全部_返回15项 | PASS |
+| 架构校验 | cargo run -p jianyan_gongju --example 跑全部自检 -- . | 15 项全过 |
+| 决策契约 | powershell -NoProfile -ExecutionPolicy Bypass -File 证道/质量门禁-域/门禁-府/验证-决策契约.ps1 | 全部契约 8 必填字段 PASS |
+| 命名唯一性 | powershell -NoProfile -ExecutionPolicy Bypass -File 证道/质量门禁-域/门禁-府/验证-命名唯一性.ps1 | PASS |
+| 防退化 ≥2 殿 | cargo run -p jianyan_gongju --example 跑全部自检 -- . | 第 15 项 PASS |
 
 ### 命名白名单（中文目录名）
 
