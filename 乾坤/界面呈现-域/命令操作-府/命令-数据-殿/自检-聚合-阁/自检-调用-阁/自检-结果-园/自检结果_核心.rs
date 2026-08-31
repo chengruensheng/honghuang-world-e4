@@ -92,6 +92,28 @@ fn 检查命令(编号: u8, 名称: &str, cmd: &str, args: &[&str], cwd: &Path) 
 
 /// 15 项一键全验精简门禁（单次 cargo test 复用编译）
 pub fn 跑全检(项目根: &Path) -> 自检报告 {
+    let 门禁目录 = 项目根.join("证道").join("质量门禁-域").join("门禁-府");
+    let 决策契约 = 门禁目录.join("验证-决策契约.ps1");
+    let 命名唯一性 = 门禁目录.join("验证-命名唯一性.ps1");
+    let 无空目录 = 门禁目录.join("验证-无空目录.ps1");
+    let 临时目录 = 门禁目录.join("验证-临时目录.ps1");
+    let 无src目录 = 门禁目录.join("验证-无src目录.ps1");
+    let 一键全验完整性 = 门禁目录.join("验证-一键全验完整性.ps1");
+    let 自检入口exe = 项目根
+        .join("道果树")
+        .join("构建物-域")
+        .join("debug")
+        .join("examples")
+        .join("自检入口.exe");
+    let 收尾临时库 = std::env::temp_dir().join("自检收尾临时库.sq3");
+    let 决策契约路径 = 决策契约.to_string_lossy().into_owned();
+    let 命名唯一性路径 = 命名唯一性.to_string_lossy().into_owned();
+    let 无空目录路径 = 无空目录.to_string_lossy().into_owned();
+    let 临时目录路径 = 临时目录.to_string_lossy().into_owned();
+    let 无src目录路径 = 无src目录.to_string_lossy().into_owned();
+    let 一键全验完整性路径 = 一键全验完整性.to_string_lossy().into_owned();
+    let 自检入口exe路径 = 自检入口exe.to_string_lossy().into_owned();
+    let 收尾临时库路径 = 收尾临时库.to_string_lossy().into_owned();
     let 项: Vec<自检项> = vec![
         检查命令(
             1,
@@ -130,9 +152,17 @@ pub fn 跑全检(项目根: &Path) -> 自检报告 {
         ),
         检查命令(
             5,
-            "架构校验 15项 (jianyan_gongju)",
+            "架构校验 15项 (跑全部自检)",
             "cargo",
-            &["test", "-p", "jianyan_gongju", "--lib"],
+            &[
+                "run",
+                "-p",
+                "jianyan_gongju",
+                "--example",
+                "跑全部自检",
+                "--",
+                ".",
+            ],
             项目根,
         ),
         检查命令(
@@ -144,7 +174,7 @@ pub fn 跑全检(项目根: &Path) -> 自检报告 {
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "E:/洪荒 - 世界/证道/质量门禁-域/门禁-府/验证-决策契约.ps1",
+                决策契约路径.as_str(),
             ],
             项目根,
         ),
@@ -157,7 +187,7 @@ pub fn 跑全检(项目根: &Path) -> 自检报告 {
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "E:/洪荒 - 世界/证道/质量门禁-域/门禁-府/验证-命名唯一性.ps1",
+                命名唯一性路径.as_str(),
             ],
             项目根,
         ),
@@ -170,7 +200,7 @@ pub fn 跑全检(项目根: &Path) -> 自检报告 {
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "E:/洪荒 - 世界/证道/质量门禁-域/门禁-府/验证-无空目录.ps1",
+                无空目录路径.as_str(),
             ],
             项目根,
         ),
@@ -183,7 +213,7 @@ pub fn 跑全检(项目根: &Path) -> 自检报告 {
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "E:/洪荒 - 世界/证道/质量门禁-域/门禁-府/验证-临时目录.ps1",
+                临时目录路径.as_str(),
             ],
             项目根,
         ),
@@ -196,7 +226,7 @@ pub fn 跑全检(项目根: &Path) -> 自检报告 {
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "E:/洪荒 - 世界/证道/质量门禁-域/门禁-府/验证-无src目录.ps1",
+                无src目录路径.as_str(),
             ],
             项目根,
         ),
@@ -226,14 +256,14 @@ pub fn 跑全检(项目根: &Path) -> 自检报告 {
         检查命令(
             14,
             "任务收尾三件套 (临时库)",
-            "E:/洪荒 - 世界/道果树/构建物-域/debug/examples/自检入口.exe",
+            自检入口exe路径.as_str(),
             &[
                 "记忆",
                 "收尾",
                 "自检任务",
                 "自检三件套通过",
                 "5",
-                "C:/Users/17628/AppData/Local/Temp/自检收尾临时库.sq3",
+                收尾临时库路径.as_str(),
             ],
             项目根,
         ),
@@ -248,7 +278,7 @@ pub fn 跑全检(项目根: &Path) -> 自检报告 {
                 "-ExecutionPolicy",
                 "Bypass",
                 "-File",
-                "E:/洪荒 - 世界/证道/质量门禁-域/门禁-府/验证-一键全验完整性.ps1",
+                一键全验完整性路径.as_str(),
             ],
             项目根,
         ),
