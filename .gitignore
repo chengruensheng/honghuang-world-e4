@@ -30,6 +30,11 @@
 .DS_Store
 Thumbs.db
 
+# Python 缓存与运行时日志
+__pycache__/
+*.pyc
+*.log
+
 # Rust 工具链
 **/*.rs.bk
 
@@ -44,8 +49,7 @@ Thumbs.db
 
 # dsh-memoir 自动生成的本地投影（不提交，由 ~/.dsh/memory 重新生成）
 PROJECT_MEMORY.md
-# 设计会话自动投影的设计文档（传承殿/00-宪法/开发遵守格式模板.md 等）
-传承殿/00-宪法/开发遵守格式模板.md
+# 设计会话自动投影的设计文档（传承殿/00-宪法/开发顺序模板.md 等）
 传承殿/00-宪法/开发顺序模板.md
 # 演示记忆库（真实流水线入口 example 运行产物）与 agent-teams 团队状态（本地运行态）
 洪荒记忆库.sq3
