@@ -145,6 +145,20 @@ pub fn 工作台页面() -> String {
   .node .nb{font-size:11px;color:var(--tx3);margin-top:7px;line-height:1.6}
   .sum-line{font-size:12px;color:var(--tx2);padding:2px 0 10px}
   .sum-line b{color:var(--tx)}
+  .term{display:flex;flex-direction:column;height:100%;min-height:0}
+  .term-head{flex:none;display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
+  .term-head .t{font-size:13px;font-weight:600}
+  .term-head .hint{font-size:11px;color:var(--tx3)}
+  .term-body{flex:1;min-height:0;overflow:auto;padding:12px 14px;font-family:Consolas,"Cascadia Mono","Courier New",monospace;font-size:12px;line-height:1.55;color:var(--tx2);white-space:pre-wrap;word-break:break-word}
+  .term-line{margin:0 0 8px}
+  .term-line .cmd{color:var(--gold)}
+  .term-line .ok{color:var(--jade)}
+  .term-line .err{color:var(--red)}
+  .term-line .meta{color:var(--tx3)}
+  .term-form{flex:none;display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--line);background:var(--bg2)}
+  .term-form input{flex:1;background:var(--card);border:1px solid var(--line);border-radius:6px;color:var(--tx);font-family:Consolas,"Cascadia Mono","Courier New",monospace;font-size:12px;padding:8px 10px}
+  .term-form input:focus{outline:none;border-color:var(--purple)}
+  .term-form button{background:var(--purple);border:0;border-radius:6px;color:#0b0e14;font-weight:600;padding:8px 14px;cursor:pointer}
   @media(max-width:1200px){.g4{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}.asp-grid{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
@@ -184,6 +198,7 @@ pub fn 工作台页面() -> String {
       <div class="tab" data-v="aspects">◈ 切面</div>
       <div class="tab" data-v="orch">⛓ 编排</div>
       <div class="tab" data-v="audit">⚖ 审计</div>
+      <div class="tab" data-v="term">⌨ 终端</div>
     </div>
   </div>
 
@@ -241,6 +256,17 @@ pub fn 工作台页面() -> String {
   <div class="view" id="v-audit">
     <div class="vhead"><div><h1>业障审计</h1><div class="sub">红线操作留痕 · 打回与终裁统计</div></div></div>
     <div class="vwrap" id="auBody"></div>
+  </div>
+
+  <div class="view" id="v-term">
+    <div class="term">
+      <div class="term-head"><span class="t">终端</span><span class="hint">只允许 cargo 构建/测试/格式/静态检查/一键全验</span></div>
+      <div class="term-body" id="termBody"></div>
+      <form class="term-form" id="termForm">
+        <input id="termInput" placeholder="输入命令，例如 cargo check --workspace" autocomplete="off" spellcheck="false">
+        <button type="submit">执行</button>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -421,6 +447,41 @@ function 渲染审计(){
       '<div class="panel"><div class="panel-h"><span class="t">终裁打回</span></div><div class="panel-b" style="padding:0"><table class="table"><tr><th>任务</th><th>结果</th><th>次数</th></tr>'+打回行+'</table></div></div>'+
     '</div>';
 }
+
+/* ---------- 终端 ---------- */
+function 终端行(html){
+  var div = document.createElement('div');
+  div.className = 'term-line';
+  div.innerHTML = html;
+  document.getElementById('termBody').appendChild(div);
+  document.getElementById('termBody').scrollTop = document.getElementById('termBody').scrollHeight;
+}
+function 执行终端命令(命令){
+  if(!命令.trim()) return;
+  终端行('<span class="cmd">$ ' + 命令.replace(/</g,'&lt;') + '</span>');
+  fetch('/api/终端', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({命令: 命令})
+  }).then(function(r){ return r.json(); }).then(function(数据){
+    if(数据.错误){
+      终端行('<span class="err">' + 数据.错误.replace(/</g,'&lt;') + '</span>');
+      return;
+    }
+    var 状态 = 数据.成功 ? '<span class="ok">退出码 ' + 数据.退出码 + '</span>' : '<span class="err">退出码 ' + 数据.退出码 + '</span>';
+    终端行('<span class="meta">' + 状态 + '</span>');
+    if(数据.标准输出) 终端行(数据.标准输出.replace(/</g,'&lt;'));
+    if(数据.标准错误) 终端行('<span class="err">' + 数据.标准错误.replace(/</g,'&lt;') + '</span>');
+  }).catch(function(错){
+    终端行('<span class="err">请求失败：' + 错 + '</span>');
+  });
+}
+document.getElementById('termForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  var 输入 = document.getElementById('termInput');
+  执行终端命令(输入.value);
+  输入.value = '';
+});
 
 /* ---------- 启动 ---------- */
 Promise.all([

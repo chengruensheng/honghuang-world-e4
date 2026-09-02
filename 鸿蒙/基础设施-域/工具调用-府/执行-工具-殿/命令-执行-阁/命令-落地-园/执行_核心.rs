@@ -149,7 +149,11 @@ mod 测试 {
     #[test]
     fn 结构化执行_白名单命令返回退出码() {
         let 结果 = 执行命令_结构化("cargo --version").unwrap_err();
-        assert!(结果.contains("命令不在白名单"), "cargo --version 不在白名单：{}", 结果);
+        assert!(
+            结果.contains("命令不在白名单"),
+            "cargo --version 不在白名单：{}",
+            结果
+        );
     }
 
     #[test]
