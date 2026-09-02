@@ -29,8 +29,10 @@ $参数 = @("真任务")
 if ($选择 -match "^[Dd]$") {
     $参数 += "--落盘"
     Write-Host ""
-    Write-Host "已选：确定性落盘模式 —— LLM 代码将覆写 规则-府/生成-验证-殿/生成区.rs" -ForegroundColor Magenta
-    Write-Host "      并跑 cargo test 真实编译执行（含准圣真实验收与道祖终裁）" -ForegroundColor Magenta
+    Write-Host "已选：确定性落盘模式 —— LLM 代码将覆写" -ForegroundColor Magenta
+    Write-Host "      道韵/律法-域/规则-府/生成-验证-殿/示例-生成-阁/生成-落地-园/生成区.rs" -ForegroundColor Magenta
+    Write-Host "      并跑 cargo test -p guize_fu --example 生成验证入口 真实编译执行" -ForegroundColor Magenta
+    Write-Host "      （含准圣真实验收与道祖终裁）" -ForegroundColor Magenta
     Write-Host ""
 } else {
     Write-Host ""
