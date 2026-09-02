@@ -72,6 +72,7 @@ LLM_MODEL=MiniMax-M3
   - 完整命令见 `洪荒 帮助`
 - 门户工作台（Web 门面）：`cargo run -p menhu_fuwu_fu --example 启动门户`
   - 默认端口 8020，浏览器打开首页即工作台；接口 `/api/总览 /api/任务 /api/事件 /api/记忆 /api/仙官 /api/切面`
+  - **一键启动**：双击 `启动工作台.ps1`（自动构建 + 后台启动 + 打开浏览器，终端可关）
 
 ## 环境变量
 
