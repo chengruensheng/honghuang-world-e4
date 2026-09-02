@@ -47,6 +47,8 @@ pub struct 请求 {
     pub 消息列表: Vec<消息>,
     pub 温度: f32,
     pub 最大token: u32,
+    /// 是否流式（stream:true，SSE 逐 delta 返回）；false 走一次性完整响应
+    pub 流式: bool,
 }
 
 impl 请求 {
@@ -56,6 +58,7 @@ impl 请求 {
             消息列表,
             温度: 0.7,
             最大token: 2048,
+            流式: false,
         }
     }
 
@@ -68,6 +71,12 @@ impl 请求 {
     /// 设温度（builder 风格）：终裁需确定性裁决（低温 0.1），执行/设计可保留默认 0.7
     pub fn 设温度(mut self, 温度: f32) -> Self {
         self.温度 = 温度;
+        self
+    }
+
+    /// 设流式（builder 风格）：true 走 SSE 逐 delta 返回（token 级流式展示），默认 false
+    pub fn 设流式(mut self, 流式: bool) -> Self {
+        self.流式 = 流式;
         self
     }
 }
@@ -116,6 +125,23 @@ pub fn 剥离思考链(原始: &str) -> (String, Option<String>) {
 pub trait 模型连接: Send + Sync {
     /// 发送请求，返回响应
     fn 发送(&self, 配置: &LLM配置, 请求: &请求) -> Result<响应, 错误>;
+
+    /// 流式发送：边接收增量正文边回调（token 级流式展示）。
+    ///
+    /// 默认实现回退到非流式 `发送`，把完整正文一次性回调——保证仅实现 `发送` 的连接
+    /// （Mock / 故障注入等）零改动仍可编译。真正支持 SSE 的连接（HTTP连接）应覆写本方法。
+    fn 发送_流式(
+        &self,
+        配置: &LLM配置,
+        请求: &请求,
+        回调: &mut dyn FnMut(&str),
+    ) -> Result<响应, 错误> {
+        let 响应 = self.发送(配置, 请求)?;
+        if !响应.内容.is_empty() {
+            回调(&响应.内容);
+        }
+        Ok(响应)
+    }
 }
 
 // ============================================================================
@@ -135,9 +161,9 @@ impl HTTP连接 {
     }
 }
 
-impl 模型连接 for HTTP连接 {
-    fn 发送(&self, 配置: &LLM配置, 请求: &请求) -> Result<响应, 错误> {
-        // 构造 OpenAI 兼容请求体
+impl HTTP连接 {
+    /// 构造 OpenAI 兼容请求体字符串（stream 由参数显式控制：流式接口强制 true）
+    fn 构造请求体(&self, 请求: &请求, stream: bool) -> Result<String, 错误> {
         let 消息列表: Vec<serde_json::Value> = 请求
             .消息列表
             .iter()
@@ -153,28 +179,32 @@ impl 模型连接 for HTTP连接 {
                 })
             })
             .collect();
-
         let 请求体 = serde_json::json!({
             "model": 请求.模型,
             "messages": 消息列表,
             "temperature": 请求.温度,
             "max_tokens": 请求.最大token,
+            "stream": stream,
         });
+        serde_json::to_string(&请求体)
+            .map_err(|e| 错误::解析错误(format!("序列化失败：{}", e)))
+    }
 
-        // ureq POST（连接建立同样受超时约束：DNS/TCP 握手阶段挂起会无限期阻塞，与读/写超时同窗口）
+    /// 发 POST 并做错误映射（连接/读/写同超时窗口；402→额度耗尽；超时→超时）
+    fn 发送请求(
+        &self, 配置: &LLM配置, 请求体_str: &str
+    ) -> Result<ureq::Response, 错误> {
         let 代理 = ureq::AgentBuilder::new()
             .timeout_connect(std::time::Duration::from_millis(配置.超时毫秒 as u64))
             .timeout_read(std::time::Duration::from_millis(配置.超时毫秒 as u64))
             .timeout_write(std::time::Duration::from_millis(配置.超时毫秒 as u64))
             .build();
-        let 请求体_str = serde_json::to_string(&请求体)
-            .map_err(|e| 错误::解析错误(format!("序列化失败：{}", e)))?;
-        let 响应 = 代理
+        代理
             .post(&配置.端点)
             .set("Authorization", &format!("Bearer {}", 配置.API密钥))
             .set("Content-Type", "application/json")
             .set("User-Agent", &self.user_agent)
-            .send_string(&请求体_str)
+            .send_string(请求体_str)
             .map_err(|e| match e {
                 ureq::Error::Status(402, _resp) => 错误::额度耗尽,
                 ureq::Error::Status(code, resp) => 错误::HTTP错误 {
@@ -197,7 +227,14 @@ impl 模型连接 for HTTP连接 {
                         }
                     }
                 }
-            })?;
+            })
+    }
+}
+
+impl 模型连接 for HTTP连接 {
+    fn 发送(&self, 配置: &LLM配置, 请求: &请求) -> Result<响应, 错误> {
+        let 请求体_str = self.构造请求体(请求, 请求.流式)?;
+        let 响应 = self.发送请求(配置, &请求体_str)?;
 
         let 响应体 = 响应
             .into_string()
@@ -225,6 +262,99 @@ impl 模型连接 for HTTP连接 {
             用量_输出tokens: 用量_输出,
         })
     }
+
+    /// 流式发送（SSE）：stream:true + 逐行解析 `data:`，边收增量正文边回调，
+    /// 最终把累积的完整正文/思考链打包为 `响应` 返回（下游流水线逻辑不变）。
+    fn 发送_流式(
+        &self,
+        配置: &LLM配置,
+        请求: &请求,
+        回调: &mut dyn FnMut(&str),
+    ) -> Result<响应, 错误> {
+        // 流式接口强制 stream:true（忽略请求.流式 字段，语义由方法决定）
+        let 请求体_str = self.构造请求体(请求, true)?;
+        let 响应对象 = self.发送请求(配置, &请求体_str)?;
+
+        let reader = 响应对象.into_reader();
+        let mut buf = std::io::BufReader::new(reader);
+        let (正文, 思考链, 用量_输入, 用量_输出) = 解析_流式响应(&mut buf, 回调)?;
+
+        Ok(响应 {
+            内容: 正文,
+            思考链,
+            用量_输入tokens: 用量_输入,
+            用量_输出tokens: 用量_输出,
+        })
+    }
+}
+
+/// 解析 OpenAI 兼容 SSE 流式响应：逐行读 `data:` 负载，提取增量正文（delta.content）
+/// 与思考链（delta.reasoning_content），边读边回调增量正文；末尾 usage 用于统计。
+///
+/// 兼容两种 chunk 形态：标准流式 `choices[0].delta.content` 与个别实现的 `message.content`。
+fn 解析_流式响应<R: std::io::BufRead>(
+    reader: &mut R,
+    回调: &mut dyn FnMut(&str),
+) -> Result<(String, Option<String>, u32, u32), 错误> {
+    let mut 正文 = String::new();
+    let mut 思考链 = String::new();
+    let mut 用量_输入: u32 = 0;
+    let mut 用量_输出: u32 = 0;
+    let mut 行 = String::new();
+    loop {
+        行.clear();
+        let n = reader
+            .read_line(&mut 行)
+            .map_err(|e| 错误::解析错误(format!("读取流式响应失败：{}", e)))?;
+        if n == 0 {
+            break; // EOF
+        }
+        let 行_trim = 行.trim();
+        if 行_trim.is_empty() {
+            continue;
+        }
+        // 只处理 data: 前缀行；忽略 event:/id:/空行等 SSE 控制行
+        let Some(负载) = 行_trim.strip_prefix("data:") else {
+            continue;
+        };
+        let 负载 = 负载.trim();
+        if 负载 == "[DONE]" {
+            break;
+        }
+        if 负载.is_empty() {
+            continue;
+        }
+        let Ok(json) = serde_json::from_str::<serde_json::Value>(负载) else {
+            continue; // 非法 JSON 行静默跳过（容错，不中断流）
+        };
+        // 增量正文：优先 delta.content，兼容 message.content
+        let 增量 = json["choices"][0]["delta"]["content"]
+            .as_str()
+            .or_else(|| json["choices"][0]["message"]["content"].as_str());
+        if let Some(片段) = 增量 {
+            if !片段.is_empty() {
+                正文.push_str(片段);
+                回调(片段);
+            }
+        }
+        // 思考链增量（MiniMax 等思考模型的 reasoning_content）
+        if let Some(推理) = json["choices"][0]["delta"]["reasoning_content"].as_str() {
+            思考链.push_str(推理);
+        }
+        // usage 统计（通常出现在最后一块）
+        if let Some(v) = json["usage"]["prompt_tokens"].as_u64() {
+            用量_输入 = v as u32;
+        }
+        if let Some(v) = json["usage"]["completion_tokens"].as_u64() {
+            用量_输出 = v as u32;
+        }
+    }
+    let 思考链_结果 = if 思考链.is_empty() {
+        None
+    } else {
+        Some(思考链)
+    };
+    Ok((正文, 思考链_结果, 用量_输入, 用量_输出))
 }
 
 // ============================================================================
@@ -258,6 +388,27 @@ impl<C: 模型连接> LLM调用器<C> {
         };
         self.连接.发送(配置, &实际请求)
     }
+
+    /// 流式调用：边接收增量正文边回调（token 级流式展示），最终仍返回完整响应
+    pub fn 调用_流式(
+        &self,
+        池名: &str,
+        请求: &请求,
+        回调: &mut dyn FnMut(&str),
+    ) -> Result<响应, 错误> {
+        let 配置 = self
+            .池
+            .取(池名)
+            .ok_or_else(|| 错误::配置错误(format!("池 {} 未配置", 池名)))?;
+        let 实际请求 = if 请求.模型.is_empty() {
+            let mut r = 请求.clone();
+            r.模型 = 配置.模型.clone();
+            r
+        } else {
+            请求.clone()
+        };
+        self.连接.发送_流式(配置, &实际请求, 回调)
+    }
 }
 
 #[cfg(test)]
@@ -283,5 +434,62 @@ mod 测试 {
         let (正文, 思考链) = 剥离思考链("<think>仅思考</think>");
         assert_eq!(正文, "");
         assert_eq!(思考链.as_deref(), Some("仅思考"));
+    }
+
+    // ---------- SSE 流式解析 ----------
+
+    /// 构造一段标准 OpenAI 兼容 SSE 流，交给 解析_流式响应，断言正文累积 + 逐段回调 + usage
+    #[test]
+    fn 解析流式_标准delta累积与回调() {
+        let 流 = "data: {\"choices\":[{\"delta\":{\"content\":\"你\"}}]}\n\
+                  \n\
+                  data: {\"choices\":[{\"delta\":{\"content\":\"好\"}}]}\n\
+                  \n\
+                  data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":11,\"completion_tokens\":2}}\n\
+                  \n\
+                  data: [DONE]\n";
+        let mut 回调片段 = Vec::new();
+        let mut 回调 = |片段: &str| 回调片段.push(片段.to_string());
+        let (正文, 思考链, 入, 出) = 解析_流式响应(&mut 流.as_bytes(), &mut 回调).unwrap();
+        assert_eq!(正文, "你好");
+        assert_eq!(思考链, None);
+        assert_eq!(回调片段, vec!["你".to_string(), "好".to_string()]);
+        assert_eq!(入, 11);
+        assert_eq!(出, 2);
+    }
+
+    /// 思考链模型（MiniMax）delta 带 reasoning_content，应与正文分离
+    #[test]
+    fn 解析流式_思考链分离() {
+        let 流 = "data: {\"choices\":[{\"delta\":{\"reasoning_content\":\"推理中\"}}]}\n\
+                  \ndata: {\"choices\":[{\"delta\":{\"content\":\"答案\"}}]}\n\
+                  \ndata: [DONE]\n";
+        let mut 回调 = |_: &str| {};
+        let (正文, 思考链, _, _) = 解析_流式响应(&mut 流.as_bytes(), &mut 回调).unwrap();
+        assert_eq!(正文, "答案");
+        assert_eq!(思考链.as_deref(), Some("推理中"));
+    }
+
+    /// 兼容个别实现的 message.content（非 delta）与非法 JSON 行容错
+    #[test]
+    fn 解析流式_兼容message与非法行容错() {
+        let 流 = "data: {\"choices\":[{\"message\":{\"content\":\"A\"}}]}\n\
+                  \ndata: 这不是合法JSON\n\
+                  \ndata: {\"choices\":[{\"delta\":{\"content\":\"B\"}}]}\n\
+                  \ndata: [DONE]\n";
+        let mut 回调 = |_: &str| {};
+        let (正文, _, _, _) = 解析_流式响应(&mut 流.as_bytes(), &mut 回调).unwrap();
+        assert_eq!(正文, "AB");
+    }
+
+    /// 空流（无任何 data 行）→ 正文为空，不报错
+    #[test]
+    fn 解析流式_空流返回空正文() {
+        let mut 回调 = |_: &str| {};
+        let (正文, 思考链, 入, 出) = 解析_流式响应(&mut "".as_bytes(), &mut 回调).unwrap();
+        assert_eq!(正文, "");
+        assert_eq!(思考链, None);
+        assert_eq!(入, 0);
+        assert_eq!(出, 0);
     }
 }
