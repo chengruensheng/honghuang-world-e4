@@ -44,6 +44,11 @@ jobs:
       - name: 单元测试 (cargo test --workspace)
         run: cargo test --workspace --lib
 
+      # 固定挂载点回归：规则-府 生成验证入口 example（真任务 --落盘 的真实执行载体）
+      # --lib 不覆盖 example；此处显式编译+执行生成区占位测试，防云端漂移
+      - name: 生成验证入口 example 测试
+        run: cargo test -p guize_fu --example 生成验证入口
+
       # 一键全验 17 项按平台分叉：
       # - ubuntu：一键全验.sh 用 pwsh（microsoft/powershell 已装）
       # - windows：一键全验.ps1 用 Windows PowerShell 5.1 直接跑
