@@ -1,0 +1,22 @@
+[package]
+name = "menhu_fuwu_fu"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "门户服务-府 - Web 工作台（HTTP 服务 + JSON 接口 + 静态前端托管，以洪荒记忆库.sq3 为真实数据后端）"
+
+[lib]
+name = "menhu_fuwu_fu"
+path = "入口.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+rusqlite = { workspace = true }
+
+[[example]]
+name = "启动门户"
+path = "示例-启动-殿/启动-演示-阁/启动-脚本-园/启动门户.rs"
+
