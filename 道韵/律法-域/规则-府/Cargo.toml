@@ -13,3 +13,8 @@ path = "入口.rs"
 
 [dependencies]
 serde = { workspace = true }
+
+[[example]]
+name = "生成验证入口"
+path = "生成-验证-殿/示例-生成-阁/生成-落地-园/生成验证入口.rs"
+# 生成区.rs 由 LLM 产出覆写（include! 静态挂载，必然编译验证）
