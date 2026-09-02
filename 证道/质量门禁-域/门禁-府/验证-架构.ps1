@@ -42,7 +42,7 @@ foreach ($f in $cargoFiles) {
     $matched = $content -match [regex]::Escape('^name = "([^"]+)"')
     if ($matched -and $matches[1]) {
         $name = $matches[1]
-        if (($name -notmatch "_fu$") -and ($name -ne "shijie")) {
+        if (($name -notmatch "_fu$") -and ($name -ne "jianyan_gongju")) {
             $非fuCrate += $f
         }
     }

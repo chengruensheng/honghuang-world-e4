@@ -20,7 +20,7 @@ $白名单 = @(
 )
 
 $违规 = @()
-$目录们 = @("鸿蒙", "乾坤", "证道", "世界")
+$目录们 = @("鸿蒙", "乾坤", "证道", "道韵")
 
 foreach ($目录 in $目录们) {
     Get-ChildItem -Path $目录 -Recurse -Filter "*.rs" -Force -ErrorAction SilentlyContinue |

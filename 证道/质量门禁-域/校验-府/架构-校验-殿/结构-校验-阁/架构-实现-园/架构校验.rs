@@ -120,7 +120,7 @@ pub fn 检查_crate命名风格(根: &Path) -> 检查结果 {
             Some(n) => n,
             None => continue,
         };
-        if name != "shijie" && name != "jianyan_gongju" && !name.ends_with("_fu") {
+        if name != "jianyan_gongju" && !name.ends_with("_fu") {
             return 检查结果::失败(format!("crate 名称不规范：{}", name));
         }
     }
@@ -223,9 +223,7 @@ pub fn 检查_传承殿8大类(根: &Path) -> 检查结果 {
         "02-概念",
         "03-决策",
         "04-设计",
-        "05-质量",
         "06-治理",
-        "08-参考",
     ];
     let mut 缺失 = Vec::new();
     for d in 必需 {
@@ -241,20 +239,18 @@ pub fn 检查_传承殿8大类(根: &Path) -> 检查结果 {
 }
 
 pub fn 检查_实施方案文档(根: &Path) -> 检查结果 {
-    let plan_dir = 根.join("传承殿").join("10-地基");
+    // 10-地基（施工蓝图）已随文档终极整理删除，改为校验决策契约文档数量
+    let plan_dir = 根.join("传承殿").join("03-决策").join("已定");
     if !plan_dir.exists() {
-        return 检查结果::失败("10-地基 不存在".to_string());
+        return 检查结果::失败("03-决策/已定 不存在".to_string());
     }
     let count = walkdir::WalkDir::new(&plan_dir)
         .into_iter()
         .flatten()
-        .filter(|e| {
-            let n = e.file_name().to_string_lossy();
-            n.contains("阶段") && n.contains("实施方案") && n.ends_with(".md")
-        })
+        .filter(|e| e.file_name().to_string_lossy().ends_with(".md"))
         .count();
     if count < 7 {
-        检查结果::失败(format!("文档 = {} < 7", count))
+        检查结果::失败(format!("决策契约文档 = {} < 7", count))
     } else {
         检查结果::通过
     }
@@ -284,44 +280,22 @@ fn 去层级后缀(name: &str, suffix: &str) -> String {
     name[..name.len() - suffix.len()].to_string()
 }
 
-fn 是排除目录2(p: &Path) -> bool {
-    let s = p.to_string_lossy();
-    [
-        ".git",
-        ".cargo",
-        ".arts",
-        ".codeartsdoer",
-        ".codebuddy",
-        ".codegraph",
-        ".workbuddy",
-        ".agent-teams",
-        ".github",
-        ".vscode",
-        ".venv",
-        ".idea",
-        "构建物-域",
-        "debug",
-        "doc",
-        "target",
-        "node_modules",
-        "examples",
-        "assets",
-    ]
-    .iter()
-    .any(|e| s.contains(e))
+/// 遍历某目录下全部子目录（跳过排除目录），供各命名检查复用
+fn 遍历目录(根: &Path, 深度: usize) -> Vec<std::path::PathBuf> {
+    walkdir::WalkDir::new(根)
+        .max_depth(深度)
+        .into_iter()
+        .flatten()
+        .map(|e| e.into_path())
+        .filter(|p| p.is_dir())
+        .filter(|p| !是排除目录(p))
+        .collect()
 }
 
 /// 规则 1：同一府路径下，殿/阁/园 名（去后缀）两两不同。
 pub fn 检查_祖孙不同名(根: &Path) -> 检查结果 {
     let mut 违规 = Vec::new();
-    for entry in walkdir::WalkDir::new(根).max_depth(8).into_iter().flatten() {
-        let p = entry.path();
-        if !p.is_dir() {
-            continue;
-        }
-        if 是排除目录2(p) {
-            continue;
-        }
+    for p in 遍历目录(根, 8) {
         let name = match p.file_name().and_then(|s| s.to_str()) {
             Some(n) => n,
             None => continue,
@@ -336,7 +310,7 @@ pub fn 检查_祖孙不同名(根: &Path) -> 检查结果 {
         // 收集该殿目录下所有阁/园名
         let mut 名集 = vec![殿名];
         let mut 子违规 = Vec::new();
-        for sub in walkdir::WalkDir::new(p).max_depth(4).into_iter().flatten() {
+        for sub in walkdir::WalkDir::new(&p).max_depth(4).into_iter().flatten() {
             if !sub.path().is_dir() {
                 continue;
             }
@@ -379,14 +353,7 @@ pub fn 检查_祖孙不同名(根: &Path) -> 检查结果 {
 pub fn 检查_同层命名唯一(根: &Path) -> 检查结果 {
     let mut 计数: std::collections::HashMap<(String, String), (u32, Vec<String>)> =
         std::collections::HashMap::new();
-    for entry in walkdir::WalkDir::new(根).max_depth(8).into_iter().flatten() {
-        let p = entry.path();
-        if !p.is_dir() {
-            continue;
-        }
-        if 是排除目录2(p) {
-            continue;
-        }
+    for p in 遍历目录(根, 8) {
         let name = match p.file_name().and_then(|s| s.to_str()) {
             Some(n) => n,
             None => continue,
@@ -426,14 +393,7 @@ pub fn 检查_同层命名唯一(根: &Path) -> 检查结果 {
 pub fn 检查_目录名无英文(根: &Path) -> 检查结果 {
     let 允许前缀: [&str; 5] = ["SQLite", "P0", "P1", "P2", "P3"];
     let mut 违规 = Vec::new();
-    for entry in walkdir::WalkDir::new(根).max_depth(8).into_iter().flatten() {
-        let p = entry.path();
-        if !p.is_dir() {
-            continue;
-        }
-        if 是排除目录2(p) {
-            continue;
-        }
+    for p in 遍历目录(根, 8) {
         let name = match p.file_name().and_then(|s| s.to_str()) {
             Some(n) => n,
             None => continue,
@@ -462,7 +422,7 @@ pub fn 检查_目录名无英文(根: &Path) -> 检查结果 {
 // 防退化门禁（Round 7+ 补录）
 // ============================================================================
 
-const 府级目录列表: [&str; 22] = [
+const 府级目录列表: [&str; 21] = [
     "鸿蒙/基础设施-域/插件上下文-府",
     "鸿蒙/基础设施-域/事件总线-府",
     "鸿蒙/基础设施-域/记忆承载-府",
@@ -475,7 +435,7 @@ const 府级目录列表: [&str; 22] = [
     "鸿蒙/基础设施-域/观测探针-府",
     "鸿蒙/基础设施-域/日志记录-府",
     "鸿蒙/世界配置-域/配置管理-府",
-    "乾坤/界面呈现-域/命令操作-府",
+    "乾坤/界面呈现-域/门户服务-府",
     "证道/验证-域/单元测试-府",
     "道韵/律法-域/规则-府",
     "证道/质量门禁-域/监控-府",
@@ -484,7 +444,6 @@ const 府级目录列表: [&str; 22] = [
     "鸿蒙/基础设施-域/实时服务-府",
     "鸿蒙/基础设施-域/任务调遣-府",
     "鸿蒙/基础设施-域/版本升级-府",
-    "世界",
 ];
 
 pub fn 检查_府级crate至少2殿(根: &Path) -> 检查结果 {
