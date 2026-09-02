@@ -4,12 +4,13 @@
 # 注意：--jobs 1 串行运行 test binary，防 23 crate 并行共享 env 变量跨 binary 污染
 # （moxing_fu 与 mingling_caozuo_fu 等共享 LLM_API_KEY 等 env，并行会间歇性污染）
 
-$ErrorActionPreference = "Stop"
+# stderr 合并到 stdout + Continue 模式：规避 PowerShell 5.1 NativeCommandError 误判（同 2 项修复）
+$ErrorActionPreference = "Continue"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 Set-Location "../.."
 
 Write-Host "=== 3/17 单元测试 (cargo test) ==="
-cargo test --workspace --lib --jobs 1 -- --test-threads=1
+cargo test --workspace --lib --jobs 1 -- --test-threads=1 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[FAIL] 单元测试未全绿" -ForegroundColor Red
     exit 1
