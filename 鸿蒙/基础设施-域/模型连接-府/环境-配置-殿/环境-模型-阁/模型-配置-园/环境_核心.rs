@@ -5,7 +5,7 @@ use crate::模型_池库_殿::{LLM池, LLM配置};
 /// 从环境变量构造 4 分类 LLM 池
 /// 环境变量约定：
 /// - LLM_API_KEY (必需，Bearer token)
-/// - LLM_BASE_URL (空串视为未设；回退 DEEPSEEK_URL → 默认 https://api.openai.com/v1/chat/completions)
+/// - LLM_BASE_URL (空串视为未设；回退 DEEPSEEK_URL → 默认 <https://api.openai.com/v1/chat/completions>)
 /// - LLM_MODEL_DAOZU / LLM_MODEL_SHENGREN / LLM_MODEL_ZHUNSHENG / LLM_MODEL_DALUO (4 分类，未设置则用 LLM_MODEL)
 /// - LLM_MODEL (空串视为未设；回退 DEEPSEEK_MODEL → 默认 gpt-3.5-turbo)
 /// - LLM_TIMEOUT_MS (默认 30000)

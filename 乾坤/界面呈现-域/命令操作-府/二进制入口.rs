@@ -1,13 +1,16 @@
 //! 二进制入口（生产 CLI，可执行名「洪荒」）
 //!
-//! 真实生产流程最小闭环：透传命令操作-府 CLI，run 走真实 LLM 后端（无 key 自动降级 mock）。
+//! 真实生产流程最小闭环：透传命令操作-府 CLI。
 //! 决策锚：260828-真实生产流程优先（原「世界」bin 归位至九根内「乾坤·命令操作-府」）
+//! 后端语义（后端-解析-园）：
+//!   未设置 / real → 真实 API（严禁降级 mock；无 LLM_API_KEY 时 fail-loud 退出码 4）
+//!   LLM_BACKEND=mock → 确定性 MockLLM（测试/演示，默认 3 轮打回上限）
 //! 用法：
 //!   洪荒                       帮助
-//!   洪荒 run --task=<id>       跑真实流水线（LLM_BACKEND=real 走真实 LLM，否则 mock）
+//!   洪荒 run `--task=<id>`     跑真实流水线（默认真实后端；LLM_BACKEND=mock 走 mock）
 //!   洪荒 status                健康检查（工作空间实时快照）
 //!   洪荒 --health              部署健康检查（退出码 0=健康）
-//!   洪荒 记忆 <子命令>         记忆命令
+//!   洪荒 记忆 `<子命令>`       记忆命令
 
 #![allow(non_snake_case)]
 
@@ -42,7 +45,7 @@ fn 分发生产(参数: &[&str]) -> 命令结果 {
             }
         }
         "run" => {
-            // 真实生产：run --task=<id> 走真实 LLM 后端（无 key 自动降级 mock）
+            // 真实生产：run --task=<id> 按 LLM_BACKEND 选后端（默认真实，严禁降级 mock）
             let 任务 = 参数.iter().find_map(|a| a.strip_prefix("--task="));
             match 任务 {
                 Some(t) => {
