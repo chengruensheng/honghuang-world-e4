@@ -126,6 +126,251 @@ fn 分发生产(参数: &[&str]) -> 命令结果 {
                 }
             }
         }
+        "探针" | "probe" => {
+            // 真实 LLM 连通性体检：发一条最小请求验证 key/端点/模型/网络全链路
+            // 「可用方向打磨」——接真实 LLM 的最后一公里：跑完整流水线前先探明能否连通
+            探针真实LLM()
+        }
         _ => 分发(参数),
+    }
+}
+
+/// 探针：真实 LLM 连通性体检（单条最小请求，1 token 验证全链路）
+///
+/// 走 moxing_fu::从环境变量构造() 的完整回退链（LLM_API_KEY → LLM_BASE_URL/DEEPSEEK_URL →
+/// LLM_MODEL/DEEPSEEK_MODEL → 超时），与真实流水线同一事实来源。
+/// 分档诊断，退出码语义对齐退出码模块：0=连通；4=模型故障（无key/超时/鉴权/额度/网络）。
+fn 探针真实LLM() -> 命令结果 {
+    use mingling_caozuo_fu::退出码;
+    use moxing_fu::{从环境变量构造, 模型连接, 消息, 请求, HTTP连接};
+
+    // 档 1：key 缺失/为空 —— 最可能的第一坑，直接给行动指引
+    let Some(池) = 从环境变量构造() else {
+        return 命令结果::失败(
+            退出码::模型故障,
+            "探针：LLM_API_KEY 未设置\n\
+             \n\
+             真实模式需要配置 API key（严禁静默降级 mock，见传承殿 AGENTS 第 15 条铁律）。\n\
+             三步接通：\n\
+             1. 复制模板：copy .env.example .env\n\
+             2. 编辑 .env 填入 LLM_API_KEY（MiniMax 开放平台创建；OpenAI 兼容端点通用）\n\
+             3. 重跑：洪荒 探针\n",
+        );
+    };
+
+    // 实际生效配置（探明系统会连哪，防「以为连 A 实际连 B」）
+    let 配置 = 池.道祖池.as_ref().expect("有 key 必有道祖池配置");
+    let 输出 = format!(
+        "探针：真实 LLM 配置\n\
+         \x20 端点：{}\n\
+         \x20 模型：{}\n\
+         \x20 超时：{}ms\n\
+         \x20 发送最小请求（1 token）…\n",
+        配置.端点, 配置.模型, 配置.超时毫秒
+    );
+
+    // 档 2：发一条最小请求（无思考链的纯连通验证）
+    let 连接 = HTTP连接::新建();
+    let 请求 = 请求::新建(
+        配置.模型.clone(),
+        vec![消息::用户("只回复两个字：连通".to_string())],
+    );
+    // 最小 token：探针只验证链路，不浪费额度
+    let 请求 = 请求.设最大token(16);
+
+    match 连接.发送(配置, &请求) {
+        Ok(响应) => {
+            let 摘要 = 响应.内容.chars().take(40).collect::<String>();
+            let 思考链提示 = if 响应.思考链.is_some() {
+                "（含思考链）"
+            } else {
+                ""
+            };
+            命令结果::成功(format!(
+                "{}探针通过：真实 LLM 连通 ✓{}\n\
+                 \x20 响应：{}\n\
+                 \x20 用量：输入 {} / 输出 {} token\n",
+                输出, 思考链提示, 摘要, 响应.用量_输入tokens, 响应.用量_输出tokens
+            ))
+        }
+        Err(错) => {
+            // 档 3：按错误类型给出可执行的修复指引
+            let 指引 = match &错 {
+                moxing_fu::错误::鉴权失败 => {
+                    "鉴权失败：LLM_API_KEY 无效或已过期，请到开放平台重新生成。"
+                }
+                moxing_fu::错误::额度耗尽 => {
+                    "额度耗尽：账号 token 用量已达上限，请充值或购买积分。"
+                }
+                moxing_fu::错误::超时 => {
+                    "请求超时：检查网络/代理，或调大 LLM_TIMEOUT_MS（.env 中，默认 120000）。"
+                }
+                moxing_fu::错误::HTTP错误 { 状态码, .. } if *状态码 == 401 => {
+                    "HTTP 401：鉴权失败，LLM_API_KEY 无效，请检查是否复制完整（含 sk- 前缀）。"
+                }
+                moxing_fu::错误::HTTP错误 { 状态码, .. } if *状态码 == 402 => {
+                    "HTTP 402：额度耗尽，请到开放平台充值。"
+                }
+                moxing_fu::错误::HTTP错误 { 状态码, 原因 } => {
+                    return 命令结果::失败(
+                        退出码::模型故障,
+                        format!(
+                            "{}探针失败：HTTP {} {}\n修复：检查 LLM_BASE_URL 是否正确（OpenAI 兼容端点需以 /chat/completions 结尾）。",
+                            输出, 状态码, 原因
+                        ),
+                    );
+                }
+                moxing_fu::错误::解析错误(消息) => {
+                    return 命令结果::失败(
+                        退出码::模型故障,
+                        format!(
+                            "{}探针失败：响应解析错误 {}\n修复：该端点可能不是 OpenAI 兼容格式。",
+                            输出, 消息
+                        ),
+                    );
+                }
+                moxing_fu::错误::配置错误(消息) => {
+                    return 命令结果::失败(
+                        退出码::模型故障,
+                        format!(
+                            "{}探针失败：配置错误 {}\n修复：检查 .env 配置项。",
+                            输出, 消息
+                        ),
+                    );
+                }
+            };
+            命令结果::失败(退出码::模型故障, format!("{}{}\n", 输出, 指引))
+        }
+    }
+}
+
+#[cfg(test)]
+mod 探针测试 {
+    use super::*;
+    use mingling_caozuo_fu::退出码;
+    use std::io::{Read, Write};
+    use std::sync::{Mutex, OnceLock};
+
+    /// env var 测试串行锁（cargo test 默认并行会污染全局 env）
+    fn 环境锁() -> std::sync::MutexGuard<'static, ()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// 在随机端口起一个最小 OpenAI 兼容假服务器，返回（地址, 请求体捕获）
+    /// 用于把探针指向本地假 LLM，验证「有 key 且连通 → 探针通过」全链路。
+    fn 起假LLM服务器() -> (String, std::sync::Arc<std::sync::Mutex<Option<String>>>) {
+        use std::net::TcpListener;
+        let 监听 = TcpListener::bind("127.0.0.1:0").expect("绑定随机端口");
+        let 地址 = 监听.local_addr().unwrap().to_string();
+        let 捕获 = std::sync::Arc::new(std::sync::Mutex::new(None));
+        let 捕获2 = 捕获.clone();
+        std::thread::spawn(move || {
+            // 阻塞等待单条连接（测试假服务器只服务一条探针请求）
+            if let Ok(mut 流) = 监听.accept() {
+                // 循环读直到收齐请求体（ureq 分块传输，body 可能在后续包）
+                let mut 请求文本 = String::new();
+                let mut 缓冲 = [0u8; 4096];
+                while let Ok(n) = 流.0.read(&mut 缓冲) {
+                    if n == 0 {
+                        break;
+                    }
+                    请求文本.push_str(&String::from_utf8_lossy(&缓冲[..n]));
+                    // 头部结束 + 已有 Content-Length 且 body 收齐 → 完整
+                    if let Some(头尾) = 请求文本.find("\r\n\r\n") {
+                        let 头 = &请求文本[..头尾];
+                        let 体长 = 头.lines().find_map(|l| {
+                            let l = l.trim();
+                            if l.len() > 16 && l[..16].eq_ignore_ascii_case("content-length:") {
+                                l[16..].trim().parse::<usize>().ok()
+                            } else {
+                                None
+                            }
+                        });
+                        let 已收体长 = 请求文本.len() - 头尾 - 4;
+                        if let Some(期望) = 体长 {
+                            if 已收体长 >= 期望 {
+                                break;
+                            }
+                        } else if !请求文本[头尾 + 4..].is_empty() {
+                            break;
+                        }
+                    }
+                }
+                *捕获2.lock().unwrap() = Some(请求文本.clone());
+                // OpenAI 兼容响应
+                let 体 = r#"{"choices":[{"message":{"role":"assistant","content":"连通"}}],"usage":{"prompt_tokens":5,"completion_tokens":2}}"#;
+                let 响应 = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    体.len(),
+                    体
+                );
+                let _ = 流.0.write_all(响应.as_bytes());
+                let _ = 流.0.flush();
+            }
+        });
+        (地址, 捕获)
+    }
+
+    #[test]
+    fn 测试_探针_无key给指引() {
+        let _g = 环境锁();
+        std::env::remove_var("LLM_API_KEY");
+        std::env::remove_var("LLM_BASE_URL");
+        std::env::remove_var("LLM_MODEL");
+        let 结果 = 探针真实LLM();
+        assert_eq!(结果.退出码, 退出码::模型故障, "无 key 应模型故障");
+        assert!(结果.输出.contains("LLM_API_KEY 未设置"), "应提示 key 缺失");
+        assert!(结果.输出.contains("copy .env.example .env"), "应给三步指引");
+    }
+
+    #[test]
+    fn 测试_探针_有key连通通过() {
+        let _g = 环境锁();
+        let (地址, _捕获) = 起假LLM服务器();
+        std::env::set_var("LLM_API_KEY", "sk-test-probe");
+        std::env::set_var(
+            "LLM_BASE_URL",
+            format!("http://{}/v1/chat/completions", 地址),
+        );
+        std::env::set_var("LLM_MODEL", "probe-model");
+        std::env::remove_var("LLM_TIMEOUT_MS");
+        let 结果 = 探针真实LLM();
+        assert_eq!(结果.退出码, 0, "连通应成功，输出：{}", 结果.输出);
+        assert!(结果.输出.contains("探针通过"), "应输出通过");
+        assert!(结果.输出.contains("probe-model"), "应打印实际生效模型");
+        // 清理
+        std::env::remove_var("LLM_API_KEY");
+        std::env::remove_var("LLM_BASE_URL");
+        std::env::remove_var("LLM_MODEL");
+    }
+
+    #[test]
+    fn 测试_探针_请求体走OpenAI兼容格式() {
+        let _g = 环境锁();
+        let (地址, 捕获) = 起假LLM服务器();
+        std::env::set_var("LLM_API_KEY", "sk-test-probe");
+        std::env::set_var(
+            "LLM_BASE_URL",
+            format!("http://{}/v1/chat/completions", 地址),
+        );
+        std::env::set_var("LLM_MODEL", "probe-model");
+        let _ = 探针真实LLM();
+        let 请求体 = 捕获.lock().unwrap().clone().unwrap_or_default();
+        assert!(
+            请求体.contains("probe-model"),
+            "请求体应含模型名：{}",
+            请求体
+        );
+        assert!(
+            请求体.contains("Bearer sk-test-probe"),
+            "应带 Authorization：{}",
+            请求体
+        );
+        std::env::remove_var("LLM_API_KEY");
+        std::env::remove_var("LLM_BASE_URL");
+        std::env::remove_var("LLM_MODEL");
     }
 }

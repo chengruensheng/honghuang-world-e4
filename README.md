@@ -36,6 +36,15 @@ LLM_MODEL=MiniMax-M3
 
 配置后 `洪荒 run` 自动走真实 API（无需重启）。未配置 key 时 fail-loud 退出码 4，**不会**静默降级为 mock。
 
+**先体检，再跑任务（推荐）**——真实 LLM 是否连通，一条命令见分晓：
+
+```bash
+# 探针：发一条最小请求（1 token）验证 key/端点/模型/网络全链路
+洪荒 探针
+# 通过：探针通过：真实 LLM 连通 ✓（打印实际生效的端点/模型/超时）
+# 失败：分档给出修复指引（key 缺失 → 三步配置；401 → 检查 key；超时 → 调大 LLM_TIMEOUT_MS）
+```
+
 > 真实模式单轮 LLM 最长 120s（8000 token 输出窗口），等待期间 stderr 会实时显示
 > 「道祖/圣人/大罗/准圣 思考中…」进度，属正常现象，请耐心等待，勿误判卡死。
 > 若终端无进度输出（如 CI 无真实 key），会 fail-loud 退出码 4。
@@ -68,6 +77,7 @@ LLM_MODEL=MiniMax-M3
   - `--health` 部署健康检查（退出码 0 即健康）
   - `status` 工作空间实时快照
   - `run --task=<id>` 跑真实流水线（默认走真实 LLM，无 key 时 fail-loud 退出码 4；`LLM_BACKEND=mock` 走确定性 Mock）
+  - `探针` 真实 LLM 连通性体检（发 1 token 最小请求，分档诊断 key/端点/鉴权/额度/超时，见「快速开始」）
   - `记忆 <子命令>` 记忆库读写与统计
   - 完整命令见 `洪荒 帮助`
 - 门户工作台（Web 门面）：`cargo run -p menhu_fuwu_fu --example 启动门户`
