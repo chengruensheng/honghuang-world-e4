@@ -4,6 +4,9 @@
 
 [build]
 target-dir = "道果树/构建物-域"
+# 关闭增量编译：rustc 增量缓存在此工作区随机 panic（rmeta/encoder "no entry found for key"）。
+# 曾长期用 CARGO_INCREMENTAL=0 临时绕过，此处持久化根治。22 crate 全量编译约 43s，可接受。
+incremental = false
 
 [target.x86_64-pc-windows-msvc]
 linker = "rust-lld.exe"
