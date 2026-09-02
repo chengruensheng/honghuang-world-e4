@@ -25,7 +25,7 @@ mod 测试 {
 
     #[test]
     fn 正常路径放行() {
-        assert!(校验_读取路径("乾坤/入口.rs").is_ok());
+        assert!(校验_读取路径("鸿蒙/入口.rs").is_ok());
     }
 
     #[test]

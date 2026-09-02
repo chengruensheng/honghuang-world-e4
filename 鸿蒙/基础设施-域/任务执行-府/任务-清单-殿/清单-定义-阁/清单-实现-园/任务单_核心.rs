@@ -53,7 +53,10 @@ mod 测试 {
     fn 样例参数() -> HashMap<String, String> {
         let mut m = HashMap::new();
         m.insert("标识".to_string(), "自举-001".to_string());
-        m.insert("目标文件".to_string(), "世界/入口.rs".to_string());
+        m.insert(
+            "目标文件".to_string(),
+            "乾坤/界面呈现-域/命令操作-府/二进制入口.rs".to_string(),
+        );
         m.insert("需求描述".to_string(), "加一个版本命令".to_string());
         m.insert("验收命令".to_string(), "cargo test".to_string());
         m.insert(
@@ -68,7 +71,7 @@ mod 测试 {
     fn 全字段解析成功() {
         let 单 = 自举任务单::从参数解析(&样例参数()).expect("解析失败");
         assert_eq!(单.标识, "自举-001");
-        assert_eq!(单.目标文件, "世界/入口.rs");
+        assert_eq!(单.目标文件, "乾坤/界面呈现-域/命令操作-府/二进制入口.rs");
         assert_eq!(单.decided_by, "界主");
     }
 

@@ -6,7 +6,7 @@
 //!   - 跑流水线_mock_llm 默认走 MockLLM连接（向后兼容）
 //!   - 跑流水线_真实_llm 走 moxing_fu::HTTP连接（无 key 时 fail loud 退出码 4，严禁降级 mock）
 
-use super::super::super::后端_选择_殿::{
+use super::super::super::后端_选择_阁::{
     后端模式, 解析后端模式, 读端点配置, 读终裁温度, 读终裁采样次数,
 };
 use super::super::super::{命令结果, 退出码};

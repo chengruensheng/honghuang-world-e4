@@ -3,7 +3,7 @@
 //! 决策锚：v4 阶段 18 多 agent 协同
 //! 关联文档：04-设计/接口契约/调度器.md
 
-use super::super::super::super::任务_数据_殿::任务_定义_阁::任务_项园_园::任务项;
+use super::super::super::super::任务_数据_殿::任务_定义_阁::任务_条目_园::任务项;
 
 pub struct 调度器 {
     pub 任务列表: Vec<任务项>,

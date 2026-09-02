@@ -17,7 +17,7 @@ pub struct 自举执行结果 {
 
 /// 归一化验收命令：自举验收语义 = 编译通过性检查。
 ///
-/// 生产 CLI 自举（shijie 二进制自举自己）时，`cargo build` 会重建运行中的 shijie.exe，
+/// 生产 CLI 自举（洪荒 二进制自举自己）时，`cargo build` 会重建运行中的 洪荒.exe，
 /// 触发 Windows 文件锁 os error 5（拒绝访问）→ 退出码 101 假失败。
 /// `cargo check` 类型检查等价（编译期错误全部暴露），但不产二进制、免疫自指锁。
 /// 只归一化 `cargo build`；`cargo test`/`cargo fmt`/`cargo clippy`/`cargo check` 原样保留。
@@ -59,7 +59,7 @@ pub fn 自举执行(代码: &str, 目标文件: &str, 验收命令: &str) -> 自
     let 格式输出 = 执行工具.执行(&格式输入);
     let 格式结果 = format!("格式规整（cargo fmt --all）：{}", 格式输出.结果);
     // 3. 跑验收命令（gongju_fu 执行命令工具，命令白名单只放行 cargo 构建/测试类）
-    //    cargo build 归一化为 cargo check：自举自指锁免疫（shijie 自举自己时 build 会锁 exe）
+    //    cargo build 归一化为 cargo check：自举自指锁免疫（洪荒 自举自己时 build 会锁 exe）
     let 归一化命令 = 归一化验收命令(验收命令);
     let 命令标注 = if 归一化命令 != 验收命令 {
         format!("（归一化：{} → {}）", 验收命令, 归一化命令)

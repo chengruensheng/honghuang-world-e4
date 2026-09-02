@@ -34,7 +34,10 @@ mod 测试 {
     fn 样例参数() -> HashMap<String, String> {
         let mut m = HashMap::new();
         m.insert("标识".to_string(), "自举-001".to_string());
-        m.insert("目标文件".to_string(), "世界/入口.rs".to_string());
+        m.insert(
+            "目标文件".to_string(),
+            "乾坤/界面呈现-域/命令操作-府/二进制入口.rs".to_string(),
+        );
         m.insert("需求描述".to_string(), "加一个版本命令".to_string());
         m.insert("验收命令".to_string(), "cargo test".to_string());
         m.insert(

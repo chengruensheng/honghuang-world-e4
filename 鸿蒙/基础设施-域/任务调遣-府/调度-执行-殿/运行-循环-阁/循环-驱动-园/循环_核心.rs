@@ -3,7 +3,7 @@
 //! 决策锚：v4 阶段 18 多 agent 协同
 //! 关联文档：04-设计/接口契约/调度器.md §运行循环
 
-use super::super::super::super::任务_数据_殿::任务_定义_阁::任务_项园_园::任务项;
+use super::super::super::super::任务_数据_殿::任务_定义_阁::任务_条目_园::任务项;
 use super::super::super::调度_核心_阁::调度_落地_园::调度器;
 
 impl 调度器 {
