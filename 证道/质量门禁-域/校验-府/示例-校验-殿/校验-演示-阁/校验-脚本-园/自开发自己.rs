@@ -320,8 +320,7 @@ fn main() {
         Ok(x) => x,
         Err(e) => {
             失败(&format!("解析 FILE 块失败：{e}"));
-            let dump = 根.join("examples").join("selfdev_response.txt");
-            std::fs::create_dir_all(dump.parent().unwrap()).ok();
+            let dump = std::env::temp_dir().join("selfdev_response.txt");
             std::fs::write(&dump, &resp).ok();
             eprintln!("  → 响应已落盘：{}", dump.display());
             std::process::exit(3);

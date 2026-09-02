@@ -16,3 +16,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 ureq = "2"
+
+[[example]]
+name = "真实_LLM_调用"
+path = "示例-调用-殿/调用-演示-阁/调用-脚本-园/真实_LLM_调用.rs"
+

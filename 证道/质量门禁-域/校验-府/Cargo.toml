@@ -15,3 +15,12 @@ path = "入口.rs"
 serde = { workspace = true }
 serde_json = { workspace = true }
 walkdir = "2"
+
+[[example]]
+name = "自开发自己"
+path = "示例-校验-殿/校验-演示-阁/校验-脚本-园/自开发自己.rs"
+
+[[example]]
+name = "跑全部自检"
+path = "示例-校验-殿/校验-演示-阁/校验-脚本-园/跑全部自检.rs"
+

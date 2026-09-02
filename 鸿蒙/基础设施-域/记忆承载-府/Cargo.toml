@@ -17,4 +17,11 @@ serde = { workspace = true }
 # v3 MVP 收口后扩展：SQLite 经档持久化（实现 trait 记忆存储）
 rusqlite = { workspace = true }
 
+[[example]]
+name = "36格位应用"
+path = "示例-格位-殿/格位-演示-阁/格位-脚本-园/36格位应用.rs"
+
+[[example]]
+name = "36格位闭环演示"
+path = "示例-格位-殿/格位-演示-阁/格位-脚本-园/36格位闭环演示.rs"
 
