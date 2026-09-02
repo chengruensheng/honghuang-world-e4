@@ -30,6 +30,42 @@ fn 实时进度(消息: &str) {
     }
 }
 
+/// 实时流式输出：角色完整内容立即写 stderr（无缓冲，终端实时可见）
+///
+/// stdout 累积日志在进程退出时才 flush，长任务被中断（如沙箱 SIGTERM）会丢失完整内容；
+/// 此回声把每个角色产出即时输出，用户全程可见实际内容而非仅字数。LLM_STREAM=off 可关。
+/// 同时把完整内容**立即落盘**（LLM_STREAM_FILE，默认 .workbuddy/流水线流式日志.txt），
+/// 保证长任务被外部中断后完整内容仍可追溯（进程被杀不丢内容，人可事后流式回看）。
+fn 实时流(角色: &str, 内容: &str) {
+    let Ok(开关) = std::env::var("LLM_STREAM") else {
+        eprintln!("\n──────── {角色} 完整产出 ────────\n{}\n──────── 以上为 {角色} 产出 ────────\n", 内容);
+        流式落盘(角色, 内容);
+        return;
+    };
+    if 开关 != "off" {
+        eprintln!("\n──────── {角色} 完整产出 ────────\n{}\n──────── 以上为 {角色} 产出 ────────\n", 内容);
+    }
+    流式落盘(角色, 内容);
+}
+
+/// 流式落盘：完整内容立即追加写入流式日志文件（防长任务被中断丢失）
+fn 流式落盘(角色: &str, 内容: &str) {
+    use std::io::Write;
+    let 路径 = std::env::var("LLM_STREAM_FILE").unwrap_or_else(|_| {
+        // 默认写到工作区 .workbuddy/ 下（与 .env 同级向上找），无则用当前目录
+        let 候选 = [
+            std::env::current_dir().ok().map(|d| d.join(".workbuddy/流水线流式日志.txt")),
+            std::env::current_dir().ok().map(|d| d.join("流水线流式日志.txt")),
+        ];
+        候选.iter().find_map(|c| c.clone()).map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|| "流水线流式日志.txt".to_string())
+    });
+    if let Ok(mut 文件) = std::fs::OpenOptions::new().create(true).append(true).open(&路径) {
+        let _ = writeln!(文件, "\n──────── {角色} 完整产出 ────────\n{}\n──────── 以上为 {角色} 产出 ────────\n", 内容);
+        let _ = 文件.flush();
+    }
+}
+
 /// 端到端后端选择（v4 阶段 17 + Round 9）
 ///
 /// 根据 LLM_BACKEND 环境变量选择后端：
@@ -569,6 +605,10 @@ fn 跑流水线_按连接(
                         池名,
                         响应.内容.chars().count()
                     ));
+                    // 实时流式输出：角色完整内容立即写 stderr（stderr 无缓冲，终端实时可见）
+                    // [治理] stdout 累积日志在进程结束时才 flush，长任务被中断会丢失完整内容；
+                    //       实时回声保证用户全程可见角色实际产出（LLM_STREAM=off 可关）
+                    实时流(池名, &响应.内容);
                 }
                 Err(e) => {
                     llm失败数 += 1;
