@@ -19,6 +19,11 @@ use mingling_caozuo_fu::{
 };
 
 fn main() {
+    // 生产 CLI 首次启动即加载工作区根 .env（LLM_API_KEY / LLM_BASE_URL / LLM_MODEL）。
+    // 此前从未加载 .env，导致用户已配置密钥却仍报「LLM_API_KEY 未设置」——真实后端从未跑通。
+    // 决策锚：260902-可用打磨（.env 加载缺陷根治）
+    加载工作区_env();
+
     let 参数: Vec<String> = std::env::args().skip(1).collect();
     let 参数引用: Vec<&str> = 参数.iter().map(|s| s.as_str()).collect();
 
@@ -26,6 +31,55 @@ fn main() {
 
     print!("{}", 结果.输出);
     std::process::exit(结果.退出码);
+}
+
+/// 加载工作区根 .env（不依赖 dotenv crate，手工解析 KEY=VALUE）
+///
+/// 从当前目录逐级向上查找 .env，找到即解析；已存在的环境变量不覆盖（系统显式值优先）。
+/// 覆盖 `cargo run`（cwd=根）与从子目录直接运行 exe 两种场景。
+fn 加载工作区_env() {
+    let 候选目录 = 工作区根候选();
+    for 目录 in 候选目录 {
+        let 路径 = 目录.join(".env");
+        let Ok(内容) = std::fs::read_to_string(&路径) else {
+            continue;
+        };
+        for 行 in 内容.lines() {
+            let 行 = 行.trim();
+            if 行.is_empty() || 行.starts_with('#') {
+                continue;
+            }
+            if let Some((键, 值)) = 行.split_once('=') {
+                let 键 = 键.trim();
+                let 值 = 值.trim().trim_matches('"');
+                // 不覆盖系统显式设置的值（命令行/环境注入优先于 .env）
+                if std::env::var(键).is_err() {
+                    std::env::set_var(键, 值);
+                }
+            }
+        }
+        return;
+    }
+}
+
+/// 生成 .env 查找候选目录：当前目录 → 逐级父目录（最多 6 层）
+fn 工作区根候选() -> Vec<std::path::PathBuf> {
+    let mut 候选 = Vec::new();
+    let Ok(当前) = std::env::current_dir() else {
+        return 候选;
+    };
+    let mut 目录 = 当前.as_path();
+    候选.push(目录.to_path_buf());
+    for _ in 0..6 {
+        match 目录.parent() {
+            Some(父) => {
+                目录 = 父;
+                候选.push(目录.to_path_buf());
+            }
+            None => break,
+        }
+    }
+    候选
 }
 
 /// 生产分发：run 走真实后端，--health 走就绪检测，其余透传命令操作-府
