@@ -62,6 +62,12 @@ PROJECT_MEMORY.md
 # dsh-memoir 本地状态缓存
 .dsh/
 
+# AI 助手本地工作区状态（记忆/工具缓存，不入版本控制；目录本体需保留）
+.workbuddy/
+
+# UI 白盒原型素材（删 UI 整理方向下的可反推内容，不入库）
+assets/
+
 # 临时 SQLite 库（回填/还债/门禁/召回/降级 测试与示例运行产物）
 *.sq3
 
