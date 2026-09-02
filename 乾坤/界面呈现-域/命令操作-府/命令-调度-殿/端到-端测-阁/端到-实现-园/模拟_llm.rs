@@ -38,12 +38,18 @@ fn 实时进度(消息: &str) {
 /// 保证长任务被外部中断后完整内容仍可追溯（进程被杀不丢内容，人可事后流式回看）。
 fn 实时流(角色: &str, 内容: &str) {
     let Ok(开关) = std::env::var("LLM_STREAM") else {
-        eprintln!("\n──────── {角色} 完整产出 ────────\n{}\n──────── 以上为 {角色} 产出 ────────\n", 内容);
+        eprintln!(
+            "\n──────── {角色} 完整产出 ────────\n{}\n──────── 以上为 {角色} 产出 ────────\n",
+            内容
+        );
         流式落盘(角色, 内容);
         return;
     };
     if 开关 != "off" {
-        eprintln!("\n──────── {角色} 完整产出 ────────\n{}\n──────── 以上为 {角色} 产出 ────────\n", 内容);
+        eprintln!(
+            "\n──────── {角色} 完整产出 ────────\n{}\n──────── 以上为 {角色} 产出 ────────\n",
+            内容
+        );
     }
     流式落盘(角色, 内容);
 }
@@ -54,14 +60,29 @@ fn 流式落盘(角色: &str, 内容: &str) {
     let 路径 = std::env::var("LLM_STREAM_FILE").unwrap_or_else(|_| {
         // 默认写到工作区 .workbuddy/ 下（与 .env 同级向上找），无则用当前目录
         let 候选 = [
-            std::env::current_dir().ok().map(|d| d.join(".workbuddy/流水线流式日志.txt")),
-            std::env::current_dir().ok().map(|d| d.join("流水线流式日志.txt")),
+            std::env::current_dir()
+                .ok()
+                .map(|d| d.join(".workbuddy/流水线流式日志.txt")),
+            std::env::current_dir()
+                .ok()
+                .map(|d| d.join("流水线流式日志.txt")),
         ];
-        候选.iter().find_map(|c| c.clone()).map(|p| p.to_string_lossy().to_string())
+        候选
+            .iter()
+            .find_map(|c| c.clone())
+            .map(|p| p.to_string_lossy().to_string())
             .unwrap_or_else(|| "流水线流式日志.txt".to_string())
     });
-    if let Ok(mut 文件) = std::fs::OpenOptions::new().create(true).append(true).open(&路径) {
-        let _ = writeln!(文件, "\n──────── {角色} 完整产出 ────────\n{}\n──────── 以上为 {角色} 产出 ────────\n", 内容);
+    if let Ok(mut 文件) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&路径)
+    {
+        let _ = writeln!(
+            文件,
+            "\n──────── {角色} 完整产出 ────────\n{}\n──────── 以上为 {角色} 产出 ────────\n",
+            内容
+        );
         let _ = 文件.flush();
     }
 }
