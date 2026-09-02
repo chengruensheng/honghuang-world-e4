@@ -161,8 +161,9 @@ impl 模型连接 for HTTP连接 {
             "max_tokens": 请求.最大token,
         });
 
-        // ureq POST
+        // ureq POST（连接建立同样受超时约束：DNS/TCP 握手阶段挂起会无限期阻塞，与读/写超时同窗口）
         let 代理 = ureq::AgentBuilder::new()
+            .timeout_connect(std::time::Duration::from_millis(配置.超时毫秒 as u64))
             .timeout_read(std::time::Duration::from_millis(配置.超时毫秒 as u64))
             .timeout_write(std::time::Duration::from_millis(配置.超时毫秒 as u64))
             .build();
