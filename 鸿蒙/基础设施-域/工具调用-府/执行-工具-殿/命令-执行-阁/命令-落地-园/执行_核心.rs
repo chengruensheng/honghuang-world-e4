@@ -65,6 +65,35 @@ impl 工具 for 执行命令工具 {
     }
 }
 
+/// 命令执行结果：结构化返回真实命令的退出码、标准输出与标准错误。
+///
+/// 供门户终端等需要展示原始终端输出的调用方使用，避免从字符串里反解析。
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct 命令执行结果 {
+    pub 命令: String,
+    pub 退出码: i32,
+    pub 标准输出: String,
+    pub 标准错误: String,
+    pub 成功: bool,
+}
+
+/// 执行白名单命令并返回结构化结果。
+///
+/// 与 `执行命令工具` 共用同一命令白名单，保证门户终端不能绕过治理约束。
+pub fn 执行命令_结构化(命令: &str) -> Result<命令执行结果, String> {
+    if let Err(e) = crate::执行_工具_殿::校验_命令(命令) {
+        return Err(e);
+    }
+    let (码, 标准输出, 标准错误) = 真实执行(命令)?;
+    Ok(命令执行结果 {
+        命令: 命令.to_string(),
+        退出码: 码,
+        标准输出,
+        标准错误,
+        成功: 码 == 0,
+    })
+}
+
 #[cfg(test)]
 mod 测试 {
     use super::*;
@@ -115,5 +144,17 @@ mod 测试 {
         );
         assert_eq!(输出.len(), 1);
         assert!(!输出[0].结果.contains("命令不在白名单"));
+    }
+
+    #[test]
+    fn 结构化执行_白名单命令返回退出码() {
+        let 结果 = 执行命令_结构化("cargo --version").unwrap_err();
+        assert!(结果.contains("命令不在白名单"), "cargo --version 不在白名单：{}", 结果);
+    }
+
+    #[test]
+    fn 结构化执行_危险命令拒绝() {
+        let 结果 = 执行命令_结构化("rm -rf .").unwrap_err();
+        assert!(结果.contains("命令不在白名单"), "危险命令应拒绝：{}", 结果);
     }
 }

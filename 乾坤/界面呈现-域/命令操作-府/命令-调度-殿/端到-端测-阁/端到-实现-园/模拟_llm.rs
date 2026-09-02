@@ -16,17 +16,20 @@ use super::终裁判定::{
 };
 use super::还债::*;
 
-/// 实时进度回声：流水线关键节点同步输出到 stderr（真实 LLM 单轮可长达 120s，
+/// 实时进度回声：流水线关键节点同步输出到 stdout（真实 LLM 单轮可长达 120s，
 /// 全程静默会让用户误以为卡死；进度回声保证等待期间终端持续可见进展）。
 ///
 /// 仅在 LLM_PROGRESS 未显式设为 off 时输出；stdout 累积日志结构保持不变。
+///
+/// 为何走 stdout 而非 stderr：stderr 经 PowerShell 5.1 调用链（bash → powershell -File → exe）
+/// 会被当作「错误流」按行缓冲，逐字无换行输出被吞；stdout 是主输出流，配合 flush 实时透传。
 fn 实时进度(消息: &str) {
     let Ok(开关) = std::env::var("LLM_PROGRESS") else {
-        eprintln!("[进度] {}", 消息);
+        println!("[进度] {}", 消息);
         return;
     };
     if 开关 != "off" {
-        eprintln!("[进度] {}", 消息);
+        println!("[进度] {}", 消息);
     }
 }
 
@@ -41,15 +44,18 @@ fn 流式开关开() -> bool {
 /// 流式显示头：角色产出开始分隔线（LLM_STREAM=off 时静默）
 fn 流式头(角色: &str) {
     if 流式开关开() {
-        eprintln!("\n──────── {角色} 完整产出 ────────");
+        println!("\n──────── {角色} 完整产出 ────────");
     }
 }
 
-/// 流式显示片段：把增量正文立即写 stderr 并 flush（token 级流式核心，逐字实时可见）
+/// 流式显示片段：把增量正文立即写 stdout 并 flush（token 级流式核心，逐字实时可见）。
+///
+/// 为何 stdout 而非 stderr：见 实时进度 注释——stderr 经 PowerShell 5.1 按行缓冲被吞，
+/// stdout 配合显式 flush 才能逐字实时透传（主流 LLM 流式体验）。
 fn 流式片段(片段: &str) {
     if 流式开关开() {
         use std::io::Write;
-        let mut 流 = std::io::stderr();
+        let mut 流 = std::io::stdout();
         let _ = 流.write_all(片段.as_bytes());
         let _ = 流.flush();
     }
@@ -58,7 +64,7 @@ fn 流式片段(片段: &str) {
 /// 流式显示尾：角色产出结束分隔线（LLM_STREAM=off 时静默）
 fn 流式尾(角色: &str) {
     if 流式开关开() {
-        eprintln!("\n──────── 以上为 {角色} 产出 ────────");
+        println!("\n──────── 以上为 {角色} 产出 ────────");
     }
 }
 
@@ -345,7 +351,15 @@ fn 跑流水线_自举核心(
                 Ok(响应) => {
                     上文 = 响应.内容.clone();
                     流式尾(池名);
-                    日志.push_str(&format!("[LLM {}] {}\n", 池名, 响应.内容));
+                    if 流式开关开() {
+                        日志.push_str(&format!(
+                            "[LLM {}] 产出完成（{} 字，全文见上方流式）\n",
+                            池名,
+                            响应.内容.chars().count()
+                        ));
+                    } else {
+                        日志.push_str(&format!("[LLM {}] {}\n", 池名, 响应.内容));
+                    }
                     流式落盘(池名, &响应.内容);
                     // 大罗产出后：确定性执行器落盘 + cargo 验证（治理铁律：LLM 产意图，确定程序执行）
                     if *池名 == "大罗" && !响应.内容.is_empty() {
@@ -612,7 +626,7 @@ fn 跑流水线_按连接(
         Some(库) => 库.to_string(),
         None => {
             // mock 模式（回填库=None）：召回/事件流读写走临时隔离库，绝不碰默认库
-            let 隔离 = std::env::temp_dir().join(format!("洪荒mock_隔离_{}.sq3", 任务标识));
+            let 隔离 = 临时隔离库路径(任务标识);
             // 隔离库是全新的，首次写入前确保可创建（父目录存在）；用完即弃，不持久化
             隔离.to_str().expect("临时库路径必须为 UTF-8").to_string()
         }
@@ -666,7 +680,7 @@ fn 跑流水线_按连接(
             }
             let req = 请求::新建("", 消息列表).设最大token(产出最大令牌);
             实时进度(&format!("{} 思考中…", 池名));
-            // token 级流式：先打印角色分隔头，边接收边逐字 flush 到 stderr（主流 LLM 流式体验），
+            // token 级流式：先打印角色分隔头，边接收边逐字 flush 到 stdout（主流 LLM 流式体验），
             // 最终完整内容仍落盘（防中断丢失 + 事后回看）。LLM_STREAM=off 仅关逐字显示，落盘不受影响。
             流式头(池名);
             let mut 回调 = |片段: &str| 流式片段(片段);
@@ -674,7 +688,16 @@ fn 跑流水线_按连接(
                 Ok(响应) => {
                     上文 = 响应.内容.clone();
                     流式尾(池名);
-                    日志.push_str(&format!("[LLM {}] {}\n", 池名, 响应.内容));
+                    // 流式开：产出已逐字显示，日志只记标记（避免 stdout 重复）；流式关：保留完整产出（唯一展示）
+                    if 流式开关开() {
+                        日志.push_str(&format!(
+                            "[LLM {}] 产出完成（{} 字，全文见上方流式）\n",
+                            池名,
+                            响应.内容.chars().count()
+                        ));
+                    } else {
+                        日志.push_str(&format!("[LLM {}] {}\n", 池名, 响应.内容));
+                    }
                     实时进度(&format!(
                         "{} 完成（输出 {} 字）",
                         池名,
@@ -830,6 +853,30 @@ fn 跑流水线_按连接(
     } else {
         命令结果::成功(日志)
     }
+}
+
+/// 生成 mock 模式临时隔离库路径。
+///
+/// 任务标识可能包含换行、标点、超长文本等不适合直接作为文件名的内容，
+/// 因此只保留安全前缀，并用稳定哈希保证不同任务不共用同一隔离库。
+fn 临时隔离库路径(任务标识: &str) -> std::path::PathBuf {
+    use std::hash::{Hash, Hasher};
+
+    let mut 哈希器 = std::collections::hash_map::DefaultHasher::new();
+    任务标识.hash(&mut 哈希器);
+    let 哈希 = 哈希器.finish();
+
+    let 安全前缀: String = 任务标识
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '-' || *c == '_')
+        .take(24)
+        .collect();
+    let 前缀 = if 安全前缀.is_empty() {
+        "任务".to_string()
+    } else {
+        安全前缀
+    };
+    std::env::temp_dir().join(format!("洪荒mock_隔离_{}_{:016x}.sq3", 前缀, 哈希))
 }
 
 /// 组装单个池的消息列表：记忆上下文（系统，头部）→ 角色卡（系统，4 分类差异化）→ 任务（用户）→ 召回块（尾部）

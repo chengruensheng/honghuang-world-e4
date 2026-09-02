@@ -100,8 +100,8 @@ LLM_MODEL=MiniMax-M3
 | `LLM_MODEL` | 无 | 模型名 |
 | `LLM_BACKEND` | `real` | `mock` 走确定性 Mock LLM（测试/演示）；`real` 强制真实 API |
 | `LLM_TIMEOUT_MS` | `120000` | 单次 LLM 调用超时（毫秒），含连接/读/写 |
-| `LLM_PROGRESS` | 开 | `off` 关闭流水线实时进度输出（stderr） |
-| `LLM_STREAM` | 开 | `off` 关闭每角色完整产出的逐字流式输出（stderr） |
+| `LLM_PROGRESS` | 开 | `off` 关闭流水线实时进度输出（stdout） |
+| `LLM_STREAM` | 开 | `off` 关闭每角色完整产出的逐字流式输出（stdout）；关闭后最终日志保留完整产出 |
 | `LLM_STREAM_FILE` | `.workbuddy/流水线流式日志.txt` | 完整产出落盘文件路径（进程被杀也不丢，可事后回看） |
 | `MENHU_PORT` / `MEMORY_DB` | `8020` / 默认库 | 门户服务端口与记忆库路径 |
 
