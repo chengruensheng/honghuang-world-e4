@@ -63,7 +63,7 @@ pub const 必填字段: &[&str] = &[
 pub fn 校验决策契约(原文: &str) -> Result<(), Vec<String>> {
     let mut 缺失 = Vec::new();
     for 字段 in 必填字段 {
-        if !contains_yaml_field(原文, 字段) {
+        if !包含_契约字段(原文, 字段) {
             缺失.push(字段.to_string());
         }
     }
@@ -103,7 +103,7 @@ pub fn 校验关键字段(原文: &str) -> Result<(), Vec<String>> {
     }
 }
 
-fn contains_yaml_field(原文: &str, 字段: &str) -> bool {
+fn 包含_契约字段(原文: &str, 字段: &str) -> bool {
     let parts: Vec<&str> = 原文.splitn(3, "---").collect();
     if parts.len() < 3 {
         return false;

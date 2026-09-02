@@ -66,191 +66,65 @@ pub fn 获取注册表() -> &'static [规则条目] {
     RULE_REGISTRY.get_or_init(构造注册表)
 }
 
+/// 规则数据行：规则ID / 严格度 / 治理域 / 描述 / 可证伪命题 / 证伪方法 / 时间窗口 / 哲学锚
+type 规则行 = (
+    &'static str,
+    严格度,
+    治理域,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+);
+
 fn 构造注册表() -> Vec<规则条目> {
-    vec![
-        规则条目 {
-            规则ID: "BASE-001-程序定".into(),
-            严格度: 严格度::Fatal,
-            治理域: 治理域::治理,
-            描述: "确定程序是治理操作唯一执行者（LLM 只生成符号材料）".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "LLM 直写知识包违规次数 = 0".into(),
-                证伪方法: "写入日志审查".into(),
-                时间窗口: "持续".into(),
-            }],
-            implements: "法·司衡基线（基线 1）".into(),
-        },
-        规则条目 {
-            规则ID: "BASE-002-异常门".into(),
-            严格度: 严格度::Warning,
-            治理域: 治理域::派发,
-            描述: "异常门自动顶异常（人类只看异常）".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "人类注意力介入次数 < 5 次/天".into(),
-                证伪方法: "异常门调用统计".into(),
-                时间窗口: "上线后 1 个月".into(),
-            }],
-            implements: "法·司衡基线（基线 3）".into(),
-        },
-        规则条目 {
-            规则ID: "BASE-003-可验证".into(),
-            严格度: 严格度::Fatal,
-            治理域: 治理域::结构,
-            描述: "可验证性约束（frozen outcome + hash 链 + falsifiable）".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "事件流 hash 校验 100% 通过".into(),
-                证伪方法: "机械判定".into(),
-                时间窗口: "上线后 1 个月".into(),
-            }],
-            implements: "法·司衡基线（基线 4）".into(),
-        },
-        规则条目 {
-            规则ID: "BASE-004-减LLM".into(),
-            严格度: 严格度::Info,
-            治理域: 治理域::派发,
-            描述: "治理延伸是减少 LLM 参与（关键决策确定化）".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "LLM 调用占比 < 30%（关键决策位）".into(),
-                证伪方法: "token 消耗统计".into(),
-                时间窗口: "上线后 3 个月".into(),
-            }],
-            implements: "法·司衡基线（基线 5）".into(),
-        },
-        规则条目 {
-            规则ID: "BASE-005-异常优先".into(),
-            严格度: 严格度::Warning,
-            治理域: 治理域::派发,
-            描述: "信息洪流是旧仓失败根因（异常优先）".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "异常响应时间 P0 < 5 分钟".into(),
-                证伪方法: "告警日志".into(),
-                时间窗口: "持续".into(),
-            }],
-            implements: "法·司衡基线（基线 2）".into(),
-        },
-        规则条目 {
-            规则ID: "BAN-001-LLM直改".into(),
-            严格度: 严格度::Fatal,
-            治理域: 治理域::治理,
-            描述: "LLM 不可直改知识包（所有写入需经 decided_by 字段校验）".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "decided_by 缺失写入失败率 100%".into(),
-                证伪方法: "机械判定".into(),
-                时间窗口: "持续".into(),
-            }],
-            implements: "法·司衡禁止（禁止 1）".into(),
-        },
-        规则条目 {
-            规则ID: "BAN-002-不可复现".into(),
-            严格度: 严格度::Fatal,
-            治理域: 治理域::引用,
-            描述: "不可复现多 Agent 交互不可作治理决策依据".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "关键决策均含可复现证据".into(),
-                证伪方法: "决策文档审查".into(),
-                时间窗口: "持续".into(),
-            }],
-            implements: "法·司衡禁止（禁止 2）".into(),
-        },
-        规则条目 {
-            规则ID: "BAN-003-入事件流".into(),
-            严格度: 严格度::Fatal,
-            治理域: 治理域::结构,
-            描述: "治理操作必入事件流，留痕不可篡改".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "治理动作可追溯率 100%".into(),
-                证伪方法: "事件流日志审查".into(),
-                时间窗口: "持续".into(),
-            }],
-            implements: "法·司衡禁止（禁止 3）".into(),
-        },
-        规则条目 {
-            规则ID: "BAN-004-视图介入".into(),
-            严格度: 严格度::Warning,
-            治理域: 治理域::派发,
-            描述: "人类只通过视图介入（不直接看原始对话）".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "原始对话查看次数 = 0（仅通过摘要+异常门介入）".into(),
-                证伪方法: "审计日志".into(),
-                时间窗口: "持续".into(),
-            }],
-            implements: "法·司衡禁止（禁止 4）".into(),
-        },
-        规则条目 {
-            规则ID: "CONTRACT-001-decidedBy".into(),
-            严格度: 严格度::Fatal,
-            治理域: 治理域::前置,
-            描述: "每决策带 decided_by（缺失则事件拒收）".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "decided_by 缺失写入失败率 100%".into(),
-                证伪方法: "机械判定".into(),
-                时间窗口: "持续".into(),
-            }],
-            implements: "法·契约（决策契约 1）".into(),
-        },
-        规则条目 {
-            规则ID: "CONTRACT-002-falsifiable".into(),
-            严格度: 严格度::Fatal,
-            治理域: 治理域::前置,
-            描述: "每决策带 falsifiable（可证伪命题 + 时间窗口）".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "决策可证伪率 > 80%".into(),
-                证伪方法: "决策文档统计".into(),
-                时间窗口: "上线后 6 个月".into(),
-            }],
-            implements: "法·契约（决策契约 2）".into(),
-        },
-        规则条目 {
-            规则ID: "CONTRACT-003-implements".into(),
-            严格度: 严格度::Warning,
-            治理域: 治理域::引用,
-            描述: "每决策可追溯到哲学锚（implements 字段引用 道/法/术/鉴/应/元 或五法）".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "决策哲学锚引用覆盖率 100%".into(),
-                证伪方法: "决策文档审查".into(),
-                时间窗口: "上线后 3 个月".into(),
-            }],
-            implements: "法·契约（决策契约 3）".into(),
-        },
-        规则条目 {
-            规则ID: "CONTRACT-004-入稿落码".into(),
-            严格度: 严格度::Info,
-            治理域: 治理域::前置,
-            描述: "先入稿再落码（AGENTS § 8：每个设计决策先入设计稿章节，再实现）".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "阶段 4+ 所有变更先有 10-地基/ 实施方案".into(),
-                证伪方法: "commit diff 审查".into(),
-                时间窗口: "持续".into(),
-            }],
-            implements: "法·契约（决策契约 4）".into(),
-        },
-        规则条目 {
-            规则ID: "RULE-V-COUNT".into(),
-            严格度: 严格度::Warning,
-            治理域: 治理域::结构,
-            描述: "RULE_COUNT 必须从 RULE_REGISTRY.len() 派生（不硬编码）。当前值 = 14 = 13 接单门 + 1 V-COUNT 自身".into(),
-            decided_by: "界主".into(),
-            falsifiable: vec![可证伪条件 {
-                命题: "RULE_COUNT == RULE_REGISTRY.len()（编译期保证 + 单元测试）".into(),
-                证伪方法: "编译期 + 单元测试".into(),
-                时间窗口: "持续".into(),
-            }],
-            implements: "法·可演化（单一真相源 + 派生值）".into(),
-        },
-    ]
+    // 14 条规则 = 13 接单门 + 1 V-COUNT 派生；decided_by 均为「界主」（单一真相源）
+    const 表: [规则行; 14] = [
+        ("BASE-001-程序定", 严格度::Fatal, 治理域::治理, "确定程序是治理操作唯一执行者（LLM 只生成符号材料）", "LLM 直写知识包违规次数 = 0", "写入日志审查", "持续", "法·司衡基线（基线 1）"),
+        ("BASE-002-异常门", 严格度::Warning, 治理域::派发, "异常门自动顶异常（人类只看异常）", "人类注意力介入次数 < 5 次/天", "异常门调用统计", "上线后 1 个月", "法·司衡基线（基线 3）"),
+        ("BASE-003-可验证", 严格度::Fatal, 治理域::结构, "可验证性约束（frozen outcome + hash 链 + falsifiable）", "事件流 hash 校验 100% 通过", "机械判定", "上线后 1 个月", "法·司衡基线（基线 4）"),
+        ("BASE-004-减LLM", 严格度::Info, 治理域::派发, "治理延伸是减少 LLM 参与（关键决策确定化）", "LLM 调用占比 < 30%（关键决策位）", "token 消耗统计", "上线后 3 个月", "法·司衡基线（基线 5）"),
+        ("BASE-005-异常优先", 严格度::Warning, 治理域::派发, "信息洪流是旧仓失败根因（异常优先）", "异常响应时间 P0 < 5 分钟", "告警日志", "持续", "法·司衡基线（基线 2）"),
+        ("BAN-001-LLM直改", 严格度::Fatal, 治理域::治理, "LLM 不可直改知识包（所有写入需经 decided_by 字段校验）", "decided_by 缺失写入失败率 100%", "机械判定", "持续", "法·司衡禁止（禁止 1）"),
+        ("BAN-002-不可复现", 严格度::Fatal, 治理域::引用, "不可复现多 Agent 交互不可作治理决策依据", "关键决策均含可复现证据", "决策文档审查", "持续", "法·司衡禁止（禁止 2）"),
+        ("BAN-003-入事件流", 严格度::Fatal, 治理域::结构, "治理操作必入事件流，留痕不可篡改", "治理动作可追溯率 100%", "事件流日志审查", "持续", "法·司衡禁止（禁止 3）"),
+        ("BAN-004-视图介入", 严格度::Warning, 治理域::派发, "人类只通过视图介入（不直接看原始对话）", "原始对话查看次数 = 0（仅通过摘要+异常门介入）", "审计日志", "持续", "法·司衡禁止（禁止 4）"),
+        ("CONTRACT-001-decidedBy", 严格度::Fatal, 治理域::前置, "每决策带 decided_by（缺失则事件拒收）", "decided_by 缺失写入失败率 100%", "机械判定", "持续", "法·契约（决策契约 1）"),
+        ("CONTRACT-002-falsifiable", 严格度::Fatal, 治理域::前置, "每决策带 falsifiable（可证伪命题 + 时间窗口）", "决策可证伪率 > 80%", "决策文档统计", "上线后 6 个月", "法·契约（决策契约 2）"),
+        ("CONTRACT-003-implements", 严格度::Warning, 治理域::引用, "每决策可追溯到哲学锚（implements 字段引用 道/法/术/鉴/应/元 或五法）", "决策哲学锚引用覆盖率 100%", "决策文档审查", "上线后 3 个月", "法·契约（决策契约 3）"),
+        ("CONTRACT-004-入稿落码", 严格度::Info, 治理域::前置, "先入稿再落码（AGENTS § 8：每个设计决策先入设计稿章节，再实现）", "阶段 4+ 所有变更先有 10-地基/ 实施方案", "commit diff 审查", "持续", "法·契约（决策契约 4）"),
+        ("RULE-V-COUNT", 严格度::Warning, 治理域::结构, "RULE_COUNT 必须从 RULE_REGISTRY.len() 派生（不硬编码）。当前值 = 14 = 13 接单门 + 1 V-COUNT 自身", "RULE_COUNT == RULE_REGISTRY.len()（编译期保证 + 单元测试）", "编译期 + 单元测试", "持续", "法·可演化（单一真相源 + 派生值）"),
+    ];
+    表.into_iter()
+        .map(|(id, 严, 域, 描, 命, 法, 窗, 锚)| 规则(id, 严, 域, 描, 命, 法, 窗, 锚))
+        .collect()
+}
+
+/// 组装单条规则（falsifiable 固定为单条可证伪条件；decided_by 恒为界主）
+fn 规则(
+    id: &str,
+    严: 严格度,
+    域: 治理域,
+    描: &str,
+    命: &str,
+    法: &str,
+    窗: &str,
+    锚: &str,
+) -> 规则条目 {
+    规则条目 {
+        规则ID: id.into(),
+        严格度: 严,
+        治理域: 域,
+        描述: 描.into(),
+        decided_by: "界主".into(),
+        falsifiable: vec![可证伪条件 {
+            命题: 命.into(),
+            证伪方法: 法.into(),
+            时间窗口: 窗.into(),
+        }],
+        implements: 锚.into(),
+    }
 }
 
 #[cfg(test)]
